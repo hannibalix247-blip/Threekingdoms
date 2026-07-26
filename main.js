@@ -1,4 +1,4 @@
-// 삼국지 영웅전 : 8x8 정통 체스 엔진 (3단계 스토리텔링 캠페인 & 난이도별 AI)
+// 삼국지 영웅전 : 8x8 정통 체스 엔진 (캠페인 카드 클릭 및 브리핑 모달 전환 완벽 보장)
 import { 
   loginWithGoogle, 
   loginAsGuest, 
@@ -29,7 +29,10 @@ let gameState = {
 };
 
 window.pickPlayerFaction = pickPlayerFaction;
+window.showStoryBriefingById = showStoryBriefingById;
+window.startCampaignBattle = startCampaignBattle;
 window.restartGame = restartGame;
+window.closeModal = closeModal;
 
 document.addEventListener('DOMContentLoaded', () => {
   renderCampaignCards();
@@ -38,12 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('titleScreen').classList.remove('hidden');
   });
 
-  document.getElementById('btnStartBattle').addEventListener('click', () => {
-    closeModal('modalStoryBriefing');
-    document.getElementById('titleScreen').classList.add('hidden');
-    soundManager.playDrum();
-    initBoard();
-  });
+  const btnStart = document.getElementById('btnStartBattle');
+  if (btnStart) {
+    btnStart.addEventListener('click', startCampaignBattle);
+  }
 
   document.getElementById('btnSaveGame').addEventListener('click', handleSaveGame);
   document.getElementById('btnLoadGame').addEventListener('click', handleLoadGame);
@@ -119,6 +120,7 @@ function pickPlayerFaction(factionId) {
 
 function renderCampaignCards() {
   const container = document.getElementById('campaignCardList');
+  if (!container) return;
   container.innerHTML = '';
 
   STORY_CAMPAIGNS.forEach(stage => {
@@ -133,7 +135,7 @@ function renderCampaignCards() {
       flex-direction: column;
       align-items: center;
       gap: 8px;
-      transition: transform 0.25s ease;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
       box-shadow: 0 8px 20px rgba(0,0,0,0.6);
     `;
 
@@ -142,15 +144,20 @@ function renderCampaignCards() {
       <div style="font-size: 1.15rem; font-weight: 900; color: #fff;">${stage.title}</div>
       <div style="font-size: 0.85rem; color: var(--gold-light); font-weight: 700;">난이도: ${stage.level}</div>
       <div style="font-size: 0.8rem; color: #cbd5e1; text-align: center;">${stage.bossName}</div>
-      <button class="header-btn" style="margin-top: 8px; width: 100%; background: ${stage.color}; font-weight: 900;">📜 도전 & 브리핑 보기</button>
+      <button class="header-btn" style="margin-top: 8px; width: 100%; background: ${stage.color}; font-weight: 900; pointer-events: none;">📜 도전 & 브리핑 보기</button>
     `;
 
-    card.onclick = () => showStoryBriefing(stage);
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showStoryBriefingById(stage.id);
+    });
+
     container.appendChild(card);
   });
 }
 
-function showStoryBriefing(stage) {
+function showStoryBriefingById(stageId) {
+  const stage = STORY_CAMPAIGNS.find(s => s.id === stageId) || STORY_CAMPAIGNS[0];
   gameState.currentCampaign = stage;
 
   document.getElementById('briefingIcon').textContent = stage.icon;
@@ -158,6 +165,13 @@ function showStoryBriefing(stage) {
   document.getElementById('briefingContent').textContent = stage.briefing;
 
   document.getElementById('modalStoryBriefing').classList.add('active');
+}
+
+function startCampaignBattle() {
+  closeModal('modalStoryBriefing');
+  document.getElementById('titleScreen').classList.add('hidden');
+  soundManager.playDrum();
+  initBoard();
 }
 
 function restartGame() {
@@ -261,6 +275,7 @@ function generateVisualPieceSVG(pieceType, isPlayer) {
 
 function renderBoard() {
   const boardEl = document.getElementById('chessBoard8x8');
+  if (!boardEl) return;
   boardEl.innerHTML = '';
 
   for (let r = 0; r < 8; r++) {
@@ -484,7 +499,6 @@ function makeAiChessMove() {
 
         gameState.validMoves.forEach(mv => {
           let score = 1;
-          // 난이도가 상(hard)일수록 전진 공격 포지션 우선
           if (diff === 'hard') score += (mv.r * 2);
           allAiMoves.push({ from: { r, c }, to: { r: mv.r, c: mv.c }, score });
         });
@@ -496,7 +510,6 @@ function makeAiChessMove() {
     let chosenMove;
 
     if (diff === 'easy') {
-      // 1단계 (하 - 초보자): 60% 확률로 무작위 이동을 선택하여 실수 유발
       if (Math.random() < 0.6) {
         chosenMove = allAiMoves[Math.floor(Math.random() * allAiMoves.length)];
       } else {
@@ -504,7 +517,6 @@ function makeAiChessMove() {
         chosenMove = allAiMoves[0];
       }
     } else if (diff === 'medium') {
-      // 2단계 (중 - 중급자): 20% 확률 실수, 80% 최적 이동
       if (Math.random() < 0.2) {
         chosenMove = allAiMoves[Math.floor(Math.random() * allAiMoves.length)];
       } else {
@@ -512,7 +524,6 @@ function makeAiChessMove() {
         chosenMove = allAiMoves[0];
       }
     } else {
-      // 3단계 (상 - 상급자): 100% 최고의 수만 선택
       allAiMoves.sort((a, b) => b.score - a.score);
       chosenMove = allAiMoves[0];
     }
@@ -528,21 +539,21 @@ function updateCapturedUI() {
   const pBox = document.getElementById('playerCapturedBox');
   const aBox = document.getElementById('aiCapturedBox');
 
-  pBox.innerHTML = '';
-  aBox.innerHTML = '';
+  if (pBox) pBox.innerHTML = '';
+  if (aBox) aBox.innerHTML = '';
 
   gameState.playerCaptured.forEach(p => {
     const span = document.createElement('span');
     span.className = 'captured-icon';
     span.textContent = p.symbol;
-    pBox.appendChild(span);
+    if (pBox) pBox.appendChild(span);
   });
 
   gameState.aiCaptured.forEach(p => {
     const span = document.createElement('span');
     span.className = 'captured-icon';
     span.textContent = p.symbol;
-    aBox.appendChild(span);
+    if (aBox) aBox.appendChild(span);
   });
 }
 
@@ -563,11 +574,13 @@ function handleGameOver(isPlayerWin) {
 }
 
 function closeModal(modalId) {
-  document.getElementById(modalId).classList.remove('active');
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.remove('active');
 }
 
 function logChess(msg) {
   const box = document.getElementById('chessLogBox');
+  if (!box) return;
   const p = document.createElement('p');
   p.style.marginBottom = '4px';
   p.textContent = msg;

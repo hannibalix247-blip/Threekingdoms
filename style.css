@@ -40,7 +40,7 @@ body {
 }
 
 /* ------------------------------------------------------------- */
-/* 🍳 1. 상단 네비게이션 헤더 */
+/* 🍳 1. 상단 네비게이션 헤더 & 로그인 프로필 */
 /* ------------------------------------------------------------- */
 .cooking-header {
   height: 70px;
@@ -70,18 +70,18 @@ body {
 .nav-menu-bar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .nav-btn {
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
   color: #475569;
-  padding: 10px 20px;
+  padding: 10px 18px;
   border-radius: 30px;
   font-family: inherit;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   cursor: pointer;
   transition: all 0.25s ease;
   display: flex;
@@ -96,8 +96,28 @@ body {
   box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35);
 }
 
+.user-profile-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--orange-light);
+  border: 1px solid var(--orange-primary);
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--orange-dark);
+  transition: all 0.2s ease;
+}
+
+.user-profile-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
 /* ------------------------------------------------------------- */
-/* 👩‍🍳 2. 첫 화면: 귀여운 '기몌진 셰프' 히어로 랜딩 존 */
+/* 👩‍🍳 2. 귀여운 '기몌진 셰프' 히어로 랜딩 존 */
 /* ------------------------------------------------------------- */
 .chef-hero-section {
   background: linear-gradient(135deg, #fff7ed, #ffedd5, #fef3c7);
@@ -127,7 +147,7 @@ body {
   margin-bottom: 16px;
 }
 
-/* 💬 말풍선 인터랙티브 텍스트 (Speech Bubble) */
+/* 💬 말풍선 인터랙티브 텍스트 */
 .speech-bubble {
   position: relative;
   background: #ffffff;
@@ -200,7 +220,7 @@ body {
   box-shadow: 0 10px 25px rgba(249, 115, 22, 0.6);
 }
 
-/* 귀여운 여자 요리사 캐릭터 일러스트 박스 */
+/* 요리사 캐릭터 박스 */
 .chef-character-box {
   width: 380px;
   height: 380px;
@@ -230,7 +250,7 @@ body {
 }
 
 /* ------------------------------------------------------------- */
-/* 🍱 3. 6대 요리 카테고리 셀렉터 */
+/* 🍱 3. 6대 요리 카테고리 셀렉터 & 레시피 카드 */
 /* ------------------------------------------------------------- */
 .section-header-title {
   font-size: 1.6rem;
@@ -240,7 +260,7 @@ body {
   margin-bottom: 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
 }
 
 .category-grid {
@@ -288,9 +308,6 @@ body {
   margin-top: 4px;
 }
 
-/* ------------------------------------------------------------- */
-/* 🍱 4. 레시피 그리드 & 음식 카드 */
-/* ------------------------------------------------------------- */
 .recipe-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -379,56 +396,97 @@ body {
 }
 
 /* ------------------------------------------------------------- */
-/* 🥬 5. 재료 손질 & 보관 꿀팁 패널 */
+/* 📅 4. 마이페이지 [나는야 쉐프] 달력 인터랙티브 스타일 */
 /* ------------------------------------------------------------- */
-.ingredient-tips-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
-  padding: 0 24px 40px 24px;
+.chef-calendar-wrapper {
+  background: #ffffff;
+  border-radius: 24px;
+  margin: 0 24px 40px 24px;
+  padding: 32px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
 }
 
-.tip-card {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+.calendar-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.calendar-title-text {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--orange-dark);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+}
+
+.calendar-day-header {
+  text-align: center;
+  font-weight: 900;
+  font-size: 1rem;
+  padding: 10px 0;
+  color: #64748b;
+}
+
+.calendar-day-header.sun { color: #ef4444; }
+.calendar-day-header.sat { color: #3b82f6; }
+
+.calendar-day-cell {
+  background: #f8fafc;
   border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  min-height: 110px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
-.tip-card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.calendar-day-cell:hover {
+  border-color: var(--orange-primary);
+  background: #fff7ed;
+  transform: translateY(-2px);
 }
 
-.tip-icon-box {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: var(--orange-light);
-  display: flex;
+.day-number {
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: #334155;
+  margin-bottom: 4px;
+}
+
+.day-number.today {
+  background: var(--orange-primary);
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.8rem;
 }
 
-.tip-title {
-  font-size: 1.2rem;
-  font-weight: 900;
-  color: #0f172a;
-}
-
-.tip-content-block {
-  background: #f8fafc;
-  padding: 12px;
-  border-radius: 10px;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  color: #334155;
+.diary-badge {
+  background: #ffffff;
+  border: 1px solid var(--orange-primary);
+  border-radius: 8px;
+  padding: 4px 6px;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--orange-dark);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 
 /* Modals Overlay */
@@ -480,27 +538,24 @@ body {
   color: #64748b;
 }
 
-.recipe-step-item {
-  background: #f8fafc;
-  border-left: 4px solid var(--orange-primary);
-  padding: 16px;
-  border-radius: 8px;
-  margin-bottom: 12px;
+.form-input-group {
+  margin-bottom: 16px;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
 }
 
-.timer-btn {
-  background: linear-gradient(135deg, #f97316, #ea580c);
-  color: #fff;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 20px;
+.form-input-group label {
   font-weight: 700;
-  font-size: 0.85rem;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
-  white-space: nowrap;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.form-input-group input, .form-input-group textarea, .form-input-group select {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-family: inherit;
+  font-size: 0.95rem;
 }

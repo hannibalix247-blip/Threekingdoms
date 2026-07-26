@@ -1,34 +1,122 @@
-// 요리왕, 기몌진 메인 애플리케이션 엔진 (기몌진 셰프 말풍선 인터랙션 포함)
+// 요리왕, 기몌진 메인 애플리케이션 엔진 (공유 레시피북 & 달력 요리 다이어리 연동)
+import { 
+  loginWithGoogle, 
+  loginAsGuest, 
+  logoutUser, 
+  listenAuthState, 
+  saveGameToCloud, 
+  loadGameFromCloud 
+} from "./firebase-config.js";
 
+let currentUser = null;
 let currentCategory = 'all';
 let currentTab = 'recipes';
 let activeTimer = null;
 let currentQuoteIndex = 0;
 
+// 날짜별 요리 다이어리 저장소 (key: 'YYYY-MM-DD', value: { name, icon, rating, memo })
+let chefDiaries = {
+  '2026-07-26': { name: '투움바 파스타', icon: '🍝', rating: '⭐⭐⭐⭐⭐', memo: '꾸덕한 우유 소스와 고춧가루 조합이 대성공!' }
+};
+
+// 사용자 공유 레시피 저장소
+let userRecipes = [
+  {
+    id: 'user_1',
+    name: '엄마표 참치 마요 비빔밥',
+    level: '★☆☆ (초간단)',
+    time: '5분',
+    servings: '1인분',
+    img: './assets/spam_mayo.svg',
+    icon: '🍱',
+    desc: '5분 만에 쓱쓱 비벼 먹는 자취생 최고 간편식!',
+    spoonTip: '참치 1캔 + 마요네즈 2스푼 + 간장 1스푼 + 참기름 0.5스푼',
+    ingredients: ['밥 1공기', '참치캔 1개', '마요네즈 2스푼', '진간장 1스푼', '김가루 약간'],
+    steps: [
+      { step: 1, text: '따뜻한 밥 위에 기름을 뺀 참치 1캔을 올려줍니다.' },
+      { step: 2, text: '간장 1스푼과 마요네즈 2스푼, 참기름 0.5스푼을 둘러줍니다.' },
+      { step: 3, text: '김가루를 솔솔 뿌려 쓱쓱 비벼 먹으면 완성!' }
+    ]
+  }
+];
+
+let selectedDiaryDate = '2026-07-26';
+let calendarCurrentYear = 2026;
+let calendarCurrentMonth = 6; // 0-based: 6 = 7월
+
 const CHEF_QUOTES = [
   "오늘 어떤 맛있는 요리를 만들어볼까요? 눌러보세요! 🍳",
+  "나만의 레시피북 탭에서 나만의 비법 요리를 올려서 공유해 보세요! 📕",
+  "나는야 쉐프 탭에서 오늘 내가 만든 요리를 달력에 예쁘게 기록해 보세요! 📅",
   "요리가 약간 탄 것 같다고요? 당황하지 말고 탄 부분을 잘라내고 참기름 한 방울! 💡",
   "밥숟가락 1스푼 = 15ml! 숟가락만 있으면 계량 스푼 없이도 간 맞추기 성공! 🥄",
   "냉장고 파먹기 버튼을 누르고 지금 남아있는 재료를 체크해 보세요! 🧊",
-  "양파 써실 땐 찬물에 10분 담가두면 눈물이 쏙 들어간답니다! 🧅",
-  "찌개가 짜면 양파나 무를 더 넣고, 싱거우면 국간장 0.5스푼! 🍲",
-  "오늘도 맛있는 한 끼 먹고 힘내세요! 기몌진이 항상 응원합니다 🧡"
+  "양파 써실 땐 찬물에 10분 담가두면 눈물이 쏙 들어간답니다! 🧅"
 ];
 
 window.filterCategory = filterCategory;
 window.switchMainTab = switchMainTab;
 window.openFridgeModal = openFridgeModal;
+window.openAddRecipeModal = openAddRecipeModal;
+window.openLoginModal = openLoginModal;
 window.closeModal = closeModal;
 window.openRecipeDetail = openRecipeDetail;
 window.findFridgeRecipes = findFridgeRecipes;
 window.startRecipeTimer = startRecipeTimer;
 window.nextChefQuote = nextChefQuote;
+window.handleSaveUserRecipe = handleSaveUserRecipe;
+window.handleSaveChefDiary = handleSaveChefDiary;
+window.changeMonth = changeMonth;
 
 document.addEventListener('DOMContentLoaded', () => {
   renderRecipes();
+  renderUserRecipes();
   renderTips();
   initFridgeChecklist();
+
+  document.getElementById('btnGoogleAuth').addEventListener('click', handleGoogleLogin);
+  document.getElementById('btnGuestAuth').addEventListener('click', handleGuestLogin);
+
+  listenAuthState((user) => {
+    if (user) {
+      currentUser = user;
+      updateUserUI(user);
+    } else {
+      handleGuestLogin();
+    }
+  });
 });
+
+function openLoginModal() {
+  document.getElementById('modalAuth').classList.add('active');
+}
+
+function updateUserUI(user) {
+  const nameEl = document.getElementById('userName');
+  const avatarEl = document.getElementById('userAvatar');
+
+  if (user) {
+    nameEl.textContent = user.displayName || (user.isAnonymous ? '익명 셰프' : user.email);
+    avatarEl.textContent = user.photoURL ? '👤' : (user.isAnonymous ? '👤' : '🌐');
+  }
+}
+
+async function handleGoogleLogin() {
+  const user = await loginWithGoogle();
+  if (user) {
+    currentUser = user;
+    updateUserUI(user);
+    closeModal('modalAuth');
+    alert(`환영합니다, ${user.displayName || '셰프'}님! 구글 계정이 연동되었습니다.`);
+  }
+}
+
+async function handleGuestLogin() {
+  const user = await loginAsGuest();
+  currentUser = user;
+  updateUserUI(user);
+  closeModal('modalAuth');
+}
 
 function nextChefQuote() {
   currentQuoteIndex = (currentQuoteIndex + 1) % CHEF_QUOTES.length;
@@ -46,11 +134,19 @@ function switchMainTab(tabName) {
   currentTab = tabName;
 
   document.getElementById('btnTabRecipes').classList.toggle('active', tabName === 'recipes');
+  document.getElementById('btnTabUserRecipes').classList.toggle('active', tabName === 'userRecipes');
+  document.getElementById('btnTabChefDiary').classList.toggle('active', tabName === 'chefDiary');
   document.getElementById('btnTabTips').classList.toggle('active', tabName === 'tips');
 
   document.getElementById('recipesMainView').style.display = tabName === 'recipes' ? 'block' : 'none';
-  document.getElementById('categorySection').style.display = tabName === 'recipes' ? 'block' : 'none';
+  document.getElementById('categorySection').style.display = (tabName === 'recipes' || tabName === 'userRecipes') ? 'block' : 'none';
+  document.getElementById('userRecipesMainView').style.display = tabName === 'userRecipes' ? 'block' : 'none';
+  document.getElementById('chefDiaryMainView').style.display = tabName === 'chefDiary' ? 'block' : 'none';
   document.getElementById('tipsMainView').style.display = tabName === 'tips' ? 'block' : 'none';
+
+  if (tabName === 'chefDiary') {
+    renderCalendar();
+  }
 }
 
 function filterCategory(catId) {
@@ -65,7 +161,8 @@ function filterCategory(catId) {
   const catObj = CATEGORIES.find(c => c.id === catId);
   document.getElementById('currentCategoryLabel').textContent = catObj ? `${catObj.name} 레시피` : '전체 추천 레시피';
 
-  renderRecipes();
+  if (currentTab === 'userRecipes') renderUserRecipes();
+  else renderRecipes();
 }
 
 function renderRecipes(recipesToRender = null) {
@@ -79,35 +176,180 @@ function renderRecipes(recipesToRender = null) {
     container.innerHTML = `
       <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #64748b;">
         <div style="font-size: 3rem; margin-bottom: 10px;">🍳</div>
-        <div>해당 재료로 만들 수 있는 레시피를 찾는 중입니다!</div>
+        <div>해당 카테고리의 레시피 준비 중입니다!</div>
       </div>
     `;
     return;
   }
 
   list.forEach(r => {
-    const card = document.createElement('div');
-    card.className = 'recipe-card';
-    card.innerHTML = `
-      <div class="recipe-img-box">
-        <img class="recipe-img" src="${r.img}" alt="${r.name}">
-        <span class="recipe-badge-level">${r.level}</span>
-      </div>
-      <div class="recipe-info-body">
-        <div class="recipe-title">${r.icon} ${r.name}</div>
-        <div class="recipe-desc">${r.desc}</div>
-        <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 12px;">
-          ⏱️ 조리시간: <b>${r.time}</b> | 👨‍👩‍👧 ${r.servings}
-        </div>
-        <div class="spoon-cheat-box">
-          🥄 밥숟가락 계량 팁: ${r.spoonTip.split('+')[0]}...
-        </div>
-      </div>
-    `;
-
-    card.onclick = () => openRecipeDetail(r);
+    const card = createRecipeCard(r);
     container.appendChild(card);
   });
+}
+
+function renderUserRecipes() {
+  const container = document.getElementById('userRecipeGridList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  userRecipes.forEach(r => {
+    const card = createRecipeCard(r);
+    container.appendChild(card);
+  });
+}
+
+function createRecipeCard(r) {
+  const card = document.createElement('div');
+  card.className = 'recipe-card';
+  card.innerHTML = `
+    <div class="recipe-img-box">
+      <img class="recipe-img" src="${r.img}" alt="${r.name}">
+      <span class="recipe-badge-level">${r.level}</span>
+    </div>
+    <div class="recipe-info-body">
+      <div class="recipe-title">${r.icon} ${r.name}</div>
+      <div class="recipe-desc">${r.desc}</div>
+      <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 12px;">
+        ⏱️ 조리시간: <b>${r.time}</b> | 👨‍👩‍👧 ${r.servings}
+      </div>
+      <div class="spoon-cheat-box">
+        🥄 밥숟가락 계량 팁: ${r.spoonTip.split('+')[0]}...
+      </div>
+    </div>
+  `;
+  card.onclick = () => openRecipeDetail(r);
+  return card;
+}
+
+function openAddRecipeModal() {
+  document.getElementById('modalAddRecipe').classList.add('active');
+}
+
+function handleSaveUserRecipe(e) {
+  e.preventDefault();
+
+  const name = document.getElementById('recipeInputName').value;
+  const icon = document.getElementById('recipeInputIcon').value || '🍳';
+  const time = document.getElementById('recipeInputTime').value || '15분';
+  const img = document.getElementById('recipeInputImg').value;
+  const desc = document.getElementById('recipeInputDesc').value;
+  const spoonTip = document.getElementById('recipeInputSpoonTip').value;
+  const ingredientsStr = document.getElementById('recipeInputIngredients').value;
+  const stepsStr = document.getElementById('recipeInputSteps').value;
+
+  const ingredients = ingredientsStr.split(',').map(s => s.trim()).filter(Boolean);
+  const steps = stepsStr.split('\n').map((s, idx) => ({ step: idx + 1, text: s.trim() })).filter(s => s.text);
+
+  const newRecipe = {
+    id: `user_${Date.now()}`,
+    name,
+    level: '★☆☆ (초보)',
+    time,
+    servings: '1~2인분',
+    img,
+    icon,
+    desc,
+    spoonTip,
+    ingredients,
+    steps
+  };
+
+  userRecipes.unshift(newRecipe);
+  closeModal('modalAddRecipe');
+  renderUserRecipes();
+  alert("🎉 나만의 레시피가 성공적으로 등록되어 사람들과 공유되었습니다!");
+}
+
+// -------------------------------------------------------------
+// 📅 마이페이지 [나는야 쉐프] 달력 인터랙티브 생성기
+// -------------------------------------------------------------
+function changeMonth(delta) {
+  calendarCurrentMonth += delta;
+  if (calendarCurrentMonth < 0) {
+    calendarCurrentMonth = 11;
+    calendarCurrentYear--;
+  } else if (calendarCurrentMonth > 11) {
+    calendarCurrentMonth = 0;
+    calendarCurrentYear++;
+  }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const monthTitle = document.getElementById('calendarMonthTitle');
+  if (monthTitle) {
+    monthTitle.textContent = `${calendarCurrentYear}년 ${calendarCurrentMonth + 1}월 - 나는야 쉐프 요리 다이어리`;
+  }
+
+  const grid = document.getElementById('calendarDaysGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const firstDay = new Date(calendarCurrentYear, calendarCurrentMonth, 1).getDay();
+  const lastDate = new Date(calendarCurrentYear, calendarCurrentMonth + 1, 0).getDate();
+
+  // 이전 달 빈 칸
+  for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement('div');
+    empty.style.background = '#f1f5f9';
+    empty.style.borderRadius = '14px';
+    grid.appendChild(empty);
+  }
+
+  // 이번 달 날짜들
+  for (let day = 1; day <= lastDate; day++) {
+    const dateStr = `${calendarCurrentYear}-${String(calendarCurrentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const diary = chefDiaries[dateStr];
+
+    const cell = document.createElement('div');
+    cell.className = 'calendar-day-cell';
+    cell.innerHTML = `
+      <div class="day-number ${dateStr === '2026-07-26' ? 'today' : ''}">${day}</div>
+      ${diary ? `
+        <div class="diary-badge">
+          <span>${diary.icon}</span>
+          <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${diary.name}</span>
+        </div>
+      ` : ''}
+    `;
+
+    cell.onclick = () => openAddDiaryModal(dateStr);
+    grid.appendChild(cell);
+  }
+}
+
+function openAddDiaryModal(dateStr) {
+  selectedDiaryDate = dateStr;
+  document.getElementById('diaryModalDateTitle').textContent = `📅 ${dateStr} 요리 다이어리 작성`;
+
+  const existing = chefDiaries[dateStr];
+  if (existing) {
+    document.getElementById('diaryInputName').value = existing.name;
+    document.getElementById('diaryInputIcon').value = existing.icon;
+    document.getElementById('diaryInputRating').value = existing.rating;
+    document.getElementById('diaryInputMemo').value = existing.memo;
+  } else {
+    document.getElementById('diaryInputName').value = '';
+    document.getElementById('diaryInputMemo').value = '';
+  }
+
+  document.getElementById('modalAddDiary').classList.add('active');
+}
+
+function handleSaveChefDiary(e) {
+  e.preventDefault();
+
+  const name = document.getElementById('diaryInputName').value;
+  const icon = document.getElementById('diaryInputIcon').value;
+  const rating = document.getElementById('diaryInputRating').value;
+  const memo = document.getElementById('diaryInputMemo').value;
+
+  chefDiaries[selectedDiaryDate] = { name, icon, rating, memo };
+
+  closeModal('modalAddDiary');
+  renderCalendar();
+  alert(`📅 ${selectedDiaryDate} 날짜에 만든 요리가 나만의 다이어리에 저장되었습니다!`);
 }
 
 function renderTips() {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>요리왕, 기몌진 : 초보자 레시피 & 메뉴 추천</title>
+  <title>요리왕, 기몌진 : 레시피 공유 & 요리 다이어리</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,15 +20,29 @@
           <span>📖</span>
           <span>초보 레시피</span>
         </button>
+        <button id="btnTabUserRecipes" class="nav-btn" onclick="switchMainTab('userRecipes')">
+          <span>📕</span>
+          <span>나만의 레시피북</span>
+        </button>
+        <button id="btnTabChefDiary" class="nav-btn" onclick="switchMainTab('chefDiary')">
+          <span>📅</span>
+          <span>나는야 쉐프</span>
+        </button>
         <button id="btnTabFrig" class="nav-btn" onclick="openFridgeModal()">
           <span>🧊</span>
           <span>냉장고 파먹기</span>
         </button>
         <button id="btnTabTips" class="nav-btn" onclick="switchMainTab('tips')">
           <span>🥬</span>
-          <span>재료 손질 & 보관법</span>
+          <span>손질 & 보관법</span>
         </button>
       </nav>
+
+      <!-- 계정 프로필 -->
+      <div id="userProfileChip" class="user-profile-chip" onclick="openLoginModal()">
+        <span id="userAvatar">👤</span>
+        <span id="userName">게스트 접속</span>
+      </div>
     </header>
 
     <!-- 👩‍🍳 2. 첫 화면: 귀여운 여자 요리사 캐릭터 '기몌진 셰프' 히어로 랜딩 존 -->
@@ -48,13 +62,13 @@
             <span>🧊</span>
             <span>냉장고 파먹기</span>
           </button>
-          <button class="quick-action-btn" style="background: linear-gradient(135deg, #10b981, #059669);" onclick="switchMainTab('tips')">
-            <span>🥬</span>
-            <span>재료 손질 꿀팁</span>
+          <button class="quick-action-btn" style="background: linear-gradient(135deg, #10b981, #059669);" onclick="switchMainTab('userRecipes')">
+            <span>📕</span>
+            <span>나만의 레시피북 공유</span>
           </button>
-          <button class="quick-action-btn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);" onclick="filterCategory('all')">
-            <span>📖</span>
-            <span>모든 레시피 보기</span>
+          <button class="quick-action-btn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);" onclick="switchMainTab('chefDiary')">
+            <span>📅</span>
+            <span>나는야 쉐프 다이어리</span>
           </button>
         </div>
       </div>
@@ -111,7 +125,7 @@
       </div>
     </section>
 
-    <!-- 📖 4. 레시피 그리드 영역 -->
+    <!-- 📖 4-1. 기본 레시피 목록 뷰 -->
     <main id="recipesMainView">
       <div class="section-header-title">
         <span>📖</span>
@@ -123,7 +137,47 @@
       </div>
     </main>
 
-    <!-- 🥬 5. 재료 손질 & 보관 꿀팁 사전 뷰 (기본 숨김) -->
+    <!-- 📕 4-2. 공유 커뮤니티 [나만의 레시피북] 뷰 -->
+    <main id="userRecipesMainView" style="display: none;">
+      <div class="section-header-title">
+        <span>📕 나만의 레시피북 (이용자 모두의 공유 공간)</span>
+        <button class="quick-action-btn" style="padding: 10px 20px; font-size: 0.95rem;" onclick="openAddRecipeModal()">
+          <span>➕</span>
+          <span>나만의 레시피 올리기</span>
+        </button>
+      </div>
+
+      <div id="userRecipeGridList" class="recipe-grid">
+        <!-- JS 동적 생성 -->
+      </div>
+    </main>
+
+    <!-- 📅 4-3. 마이페이지 [나는야 쉐프] 달력 요리 다이어리 뷰 -->
+    <main id="chefDiaryMainView" style="display: none;">
+      <div class="chef-calendar-wrapper">
+        <div class="calendar-header-bar">
+          <button class="nav-btn" onclick="changeMonth(-1)">◀ 이전 달</button>
+          <div id="calendarMonthTitle" class="calendar-title-text">2026년 7월 - 나는야 쉐프 요리 다이어리</div>
+          <button class="nav-btn" onclick="changeMonth(1)">다음 달 ▶</button>
+        </div>
+
+        <div class="calendar-grid">
+          <div class="calendar-day-header sun">일</div>
+          <div class="calendar-day-header">월</div>
+          <div class="calendar-day-header">화</div>
+          <div class="calendar-day-header">수</div>
+          <div class="calendar-day-header">목</div>
+          <div class="calendar-day-header">금</div>
+          <div class="calendar-day-header sat">토</div>
+        </div>
+
+        <div id="calendarDaysGrid" class="calendar-grid" style="margin-top: 10px;">
+          <!-- JS 동적 달력 생성 -->
+        </div>
+      </div>
+    </main>
+
+    <!-- 🥬 4-4. 재료 손질 & 보관 꿀팁 사전 뷰 -->
     <main id="tipsMainView" style="display: none;">
       <div class="section-header-title">
         <span>🥬</span>
@@ -136,7 +190,134 @@
     </main>
   </div>
 
-  <!-- 🧊 6. 냉장고 파먹기 (재료 체크박스) 모달 -->
+  <!-- 🔐 5. 로그인 모달 -->
+  <div id="modalAuth" class="modal-overlay">
+    <div class="modal-container" style="max-width: 480px; text-align: center;">
+      <button class="modal-close-btn" onclick="closeModal('modalAuth')">✕</button>
+      <h2 style="font-size: 1.8rem; font-weight: 900; color: var(--orange-dark); margin-bottom: 16px;">🔐 사용자 계정 로그인</h2>
+      <p style="color: #64748b; margin-bottom: 24px;">구글 계정으로 로그인하여 나만의 레시피를 공유하고 요리 다이어리를 연동하세요!</p>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <button id="btnGoogleAuth" class="nav-btn active" style="padding: 14px; justify-content: center; font-size: 1.05rem; background: #ea4335;">
+          <span>🌐 Google 계정으로 로그인</span>
+        </button>
+        <button id="btnGuestAuth" class="nav-btn" style="padding: 14px; justify-content: center; font-size: 1rem;">
+          <span>👤 게스트 모드 이용</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ➕ 6. 나만의 레시피 등록 모달 -->
+  <div id="modalAddRecipe" class="modal-overlay">
+    <div class="modal-container" style="max-width: 650px;">
+      <button class="modal-close-btn" onclick="closeModal('modalAddRecipe')">✕</button>
+      <h2 style="font-size: 1.8rem; font-weight: 900; color: var(--orange-dark); margin-bottom: 16px;">📕 나만의 레시피 올리기</h2>
+
+      <form id="addRecipeForm" onsubmit="handleSaveUserRecipe(event)">
+        <div class="form-input-group">
+          <label>요리 이름</label>
+          <input type="text" id="recipeInputName" placeholder="예: 엄마표 참치 마요 비빔밥" required>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <div class="form-input-group" style="flex: 1;">
+            <label>요리 이모지 아이콘</label>
+            <input type="text" id="recipeInputIcon" value="🍳" required>
+          </div>
+          <div class="form-input-group" style="flex: 1;">
+            <label>조리 시간</label>
+            <input type="text" id="recipeInputTime" placeholder="예: 15분" required>
+          </div>
+        </div>
+
+        <div class="form-input-group">
+          <label>요리 대표 사진 선택</label>
+          <select id="recipeInputImg">
+            <option value="./assets/kimchi_jjigae.svg">🍲 찌개 / 국물 이미지</option>
+            <option value="./assets/jeyuk.svg">🥩 고기 / 볶음 이미지</option>
+            <option value="./assets/egg_roll.svg">🍳 계란 / 반찬 이미지</option>
+            <option value="./assets/pasta.svg">🍝 파스타 / 면류 이미지</option>
+            <option value="./assets/spam_mayo.svg">🍱 덮밥 / 비빔밥 이미지</option>
+            <option value="./assets/tteokbokki.svg">🥘 떡볶이 / 분식 이미지</option>
+          </select>
+        </div>
+
+        <div class="form-input-group">
+          <label>요리 한 줄 소개</label>
+          <input type="text" id="recipeInputDesc" placeholder="예: 5분 만에 고소하게 비벼 먹는 자취생 치트키!" required>
+        </div>
+
+        <div class="form-input-group">
+          <label>🥄 밥숟가락 계량 팁 & 양념 비율</label>
+          <input type="text" id="recipeInputSpoonTip" placeholder="예: 참치 1캔 + 마요네즈 2스푼 + 데리야끼 1스푼" required>
+        </div>
+
+        <div class="form-input-group">
+          <label>🛒 필요 재료 (쉼표로 구분)</label>
+          <input type="text" id="recipeInputIngredients" placeholder="예: 밥 1공기, 참치캔 1개, 마요네즈 2스푼, 김가루" required>
+        </div>
+
+        <div class="form-input-group">
+          <label>🍳 조리 순서 (줄바꿈으로 구별)</label>
+          <textarea id="recipeInputSteps" rows="4" placeholder="1. 밥 위에 참치를 올립니다.&#10;2. 마요네즈를 지그재그로 뿌립니다." required></textarea>
+        </div>
+
+        <button type="submit" class="quick-action-btn" style="width: 100%; justify-content: center; margin-top: 12px;">
+          🚀 레시피 공유 등록하기
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 📅 7. 날짜별 요리 다이어리 등록 모달 -->
+  <div id="modalAddDiary" class="modal-overlay">
+    <div class="modal-container" style="max-width: 550px;">
+      <button class="modal-close-btn" onclick="closeModal('modalAddDiary')">✕</button>
+      <h2 id="diaryModalDateTitle" style="font-size: 1.6rem; font-weight: 900; color: var(--orange-dark); margin-bottom: 16px;">📅 요리 다이어리 작성</h2>
+
+      <form id="addDiaryForm" onsubmit="handleSaveChefDiary(event)">
+        <div class="form-input-group">
+          <label>오늘 내가 만든 요리 이름</label>
+          <input type="text" id="diaryInputName" placeholder="예: 성공적인 감바스 알 아히요!" required>
+        </div>
+
+        <div class="form-input-group">
+          <label>요리 인증 이모지 아이콘</label>
+          <select id="diaryInputIcon">
+            <option value="🍳">🍳 프라이 / 계란</option>
+            <option value="🍲">🍲 찌개 / 국</option>
+            <option value="🥩">🥩 고기 / 구이</option>
+            <option value="🍝">🍝 파스타 / 면</option>
+            <option value="🍤">🍤 감바스 / 해산물</option>
+            <option value="🍱">🍱 덮밥 / 도시락</option>
+            <option value="🍰">🍰 디저트 / 베이킹</option>
+          </select>
+        </div>
+
+        <div class="form-input-group">
+          <label>오늘의 요리 만족도 평점</label>
+          <select id="diaryInputRating">
+            <option value="⭐⭐⭐⭐⭐">⭐⭐⭐⭐⭐ (대성공! 완벽한 맛)</option>
+            <option value="⭐⭐⭐⭐">⭐⭐⭐⭐ (성공적! 맛있었음)</option>
+            <option value="⭐⭐⭐">⭐⭐⭐ (보통! 괜찮았음)</option>
+            <option value="⭐⭐">⭐⭐ (약간 아쉬움)</option>
+          </select>
+        </div>
+
+        <div class="form-input-group">
+          <label>오늘의 요리 일기 (한 줄 소감)</label>
+          <textarea id="diaryInputMemo" rows="3" placeholder="예: 마늘 향이 은은하게 배어 나와 빵에 찍어 먹으니 최고였다!" required></textarea>
+        </div>
+
+        <button type="submit" class="quick-action-btn" style="width: 100%; justify-content: center; margin-top: 12px;">
+          💾 달력에 요리 기록하기
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 🧊 8. 냉장고 파먹기 모달 -->
   <div id="modalFridge" class="modal-overlay">
     <div class="modal-container" style="max-width: 600px;">
       <button class="modal-close-btn" onclick="closeModal('modalFridge')">✕</button>
@@ -144,7 +325,7 @@
       <p style="color: #64748b; margin-bottom: 20px;">지금 냉장고에 남아있는 재료를 체크해보세요! 뚝딱 만들 수 있는 요리를 찾아드립니다.</p>
 
       <div id="fridgeIngredientChecklist" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px;">
-        <!-- JS 체크박스 동적 생성 -->
+        <!-- JS 동적 체크박스 -->
       </div>
 
       <button onclick="findFridgeRecipes()" class="nav-btn active" style="width: 100%; justify-content: center; padding: 14px; font-size: 1.1rem;">
@@ -153,7 +334,7 @@
     </div>
   </div>
 
-  <!-- ⏱️ 7. 단계별 상세 레시피 모달 (타이머 내장) -->
+  <!-- ⏱️ 9. 상세 레시피 모달 -->
   <div id="modalRecipeDetail" class="modal-overlay">
     <div class="modal-container">
       <button class="modal-close-btn" onclick="closeModal('modalRecipeDetail')">✕</button>
@@ -171,13 +352,11 @@
         </div>
       </div>
 
-      <!-- 재료 목록 -->
       <div style="margin-bottom: 24px;">
         <h3 style="font-size: 1.1rem; font-weight: 900; color: #0f172a; margin-bottom: 8px;">🛒 필요 재료</h3>
         <div id="detailIngredients" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
       </div>
 
-      <!-- 조리 단계 (Steps) -->
       <div>
         <h3 style="font-size: 1.1rem; font-weight: 900; color: #0f172a; margin-bottom: 12px;">🍳 단계별 조리 순서</h3>
         <div id="detailSteps"></div>

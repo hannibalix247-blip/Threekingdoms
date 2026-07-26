@@ -1,4 +1,4 @@
-// 요리왕, 기몌진 메인 애플리케이션 엔진 (공유 레시피북 & 요리 다이어리 수정/삭제 연동)
+// 요리왕, 기몌진 메인 애플리케이션 엔진 (로그인 무관 나만의 레시피북 전체 공개 지원)
 import { 
   loginWithGoogle, 
   loginAsGuest, 
@@ -19,7 +19,7 @@ let chefDiaries = {
   '2026-07-26': { name: '투움바 파스타', icon: '🍝', rating: '⭐⭐⭐⭐⭐', memo: '꾸덕한 우유 소스와 고춧가루 조합이 대성공!' }
 };
 
-// 사용자 공유 레시피 저장소
+// 공유 커뮤니티 [나만의 레시피북] 기본 목록 (로그인 여부와 전혀 상관없이 누구나 전체 조회 가능)
 let userRecipes = [
   {
     id: 'user_1',
@@ -37,8 +37,35 @@ let userRecipes = [
       { step: 2, text: '간장 1스푼과 마요네즈 2스푼, 참기름 0.5스푼을 둘러줍니다.' },
       { step: 3, text: '김가루를 솔솔 뿌려 쓱쓱 비벼 먹으면 완성!' }
     ]
+  },
+  {
+    id: 'user_2',
+    name: '자취방 치즈 김치볶음밥',
+    level: '★☆☆ (초간단)',
+    time: '10분',
+    servings: '1인분',
+    img: './assets/kimchi_jjigae.svg',
+    icon: '🍚',
+    desc: '모짜렐라 치즈가 늘어나는 초간단 김치볶음밥!',
+    spoonTip: '신김치 1컵 + 고추장 0.5스푼 + 설탕 0.5스푼 + 굴소스 1스푼',
+    ingredients: ['밥 1공기', '잘게 썬 신김치 1컵', '피자 치즈 1컵', '고추장 0.5스푼', '참기름 1스푼'],
+    steps: [
+      { step: 1, text: '팬에 기름을 두르고 신김치와 고추장 0.5스푼, 설탕 0.5스푼을 달달 볶아줍니다.' },
+      { step: 2, text: '밥 1공기를 넣고 주걱으로 펴가며 볶은 후, 한쪽으로 밥을 모읍니다.' },
+      { step: 3, text: '빈 공간에 모짜렐라 치즈를 듬뿍 넣고 뚜껑을 덮어 치즈를 녹여주면 완성!' }
+    ]
   }
 ];
+
+// 로컬 스토리지에 저장된 유저 레시피가 있다면 불러오기
+try {
+  const savedUserRecipes = localStorage.getItem('gimyejin_user_recipes');
+  if (savedUserRecipes) {
+    userRecipes = JSON.parse(savedUserRecipes);
+  }
+} catch (e) {
+  console.warn("로컬 사용자 레시피 로딩 오류:", e);
+}
 
 let selectedDiaryDate = '2026-07-26';
 let calendarCurrentYear = 2026;
@@ -46,7 +73,7 @@ let calendarCurrentMonth = 6;
 
 const CHEF_QUOTES = [
   "오늘 어떤 맛있는 요리를 만들어볼까요? 눌러보세요! 🍳",
-  "나만의 레시피북 탭에서 공유한 레시피를 수정하고 삭제할 수도 있어요! ✏️",
+  "나만의 레시피북 탭에서는 누구나 로그인 없이도 공유된 레시피를 보실 수 있어요! 📕",
   "나는야 쉐프 탭에서 오늘 내가 만든 요리를 달력에 예쁘게 기록해 보세요! 📅",
   "요리가 약간 탄 것 같다고요? 당황하지 말고 탄 부분을 잘라내고 참기름 한 방울! 💡",
   "밥숟가락 1스푼 = 15ml! 숟가락만 있으면 계량 스푼 없이도 간 맞추기 성공! 🥄",
@@ -73,7 +100,7 @@ window.changeMonth = changeMonth;
 
 document.addEventListener('DOMContentLoaded', () => {
   renderRecipes();
-  renderUserRecipes();
+  renderUserRecipes(); // 로그인 여부와 무관하게 모든 공유 게시글 즉시 공개 렌더링
   renderTips();
   initFridgeChecklist();
 
@@ -147,7 +174,9 @@ function switchMainTab(tabName) {
   document.getElementById('chefDiaryMainView').style.display = tabName === 'chefDiary' ? 'block' : 'none';
   document.getElementById('tipsMainView').style.display = tabName === 'tips' ? 'block' : 'none';
 
-  if (tabName === 'chefDiary') {
+  if (tabName === 'userRecipes') {
+    renderUserRecipes(); // 탭 전환 시에도 로그인 여부 상관없이 100% 전체 공개
+  } else if (tabName === 'chefDiary') {
     renderCalendar();
   }
 }
@@ -181,6 +210,7 @@ function renderRecipes(recipesToRender = null) {
   });
 }
 
+// 로그인 여부와 관계없이 나만의 레시피북 전체 게시글 누구나 공개 렌더링
 function renderUserRecipes() {
   const container = document.getElementById('userRecipeGridList');
   if (!container) return;
@@ -271,6 +301,7 @@ function editUserRecipe(recipeId) {
 function deleteUserRecipe(recipeId) {
   if (confirm("정말 이 레시피를 삭제하시겠습니까?")) {
     userRecipes = userRecipes.filter(r => r.id !== recipeId);
+    saveUserRecipesToLocal();
     renderUserRecipes();
     alert("🗑️ 해당 레시피가 성공적으로 삭제되었습니다.");
   }
@@ -320,15 +351,24 @@ function handleSaveUserRecipe(e) {
       steps
     };
     userRecipes.unshift(newRecipe);
-    alert("🎉 나만의 레시피가 성공적으로 공유 등록되었습니다!");
+    alert("🎉 나만의 레시피가 성공적으로 공개 등록되었습니다! 누구나 자유롭게 이 게시글을 보실 수 있습니다.");
   }
 
+  saveUserRecipesToLocal();
   closeModal('modalAddRecipe');
   renderUserRecipes();
 }
 
+function saveUserRecipesToLocal() {
+  try {
+    localStorage.setItem('gimyejin_user_recipes', JSON.stringify(userRecipes));
+  } catch (e) {
+    console.warn("로컬 사용자 레시피 저장 실패:", e);
+  }
+}
+
 // -------------------------------------------------------------
-// 📅 마이페이지 [나는야 쉐프] 달력 다이어리 수정 및 삭제
+// 📅 마이페이지 [나는야 쉐프] 달력 다이어리
 // -------------------------------------------------------------
 function changeMonth(delta) {
   calendarCurrentMonth += delta;

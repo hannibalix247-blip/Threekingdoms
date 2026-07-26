@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>삼국지 영웅전 (Romance of the Three Kingdoms)</title>
+  <title>삼국지 영웅전 : 1:1 전술 카드 체스 듀얼</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- 🏰 1. 전면 웅장한 타이틀 화면 ("삼국지 영웅전") -->
+  <!-- 🏰 1. 타이틀 레벨 랜딩 화면 -->
   <div id="titleScreen">
-    <div class="title-header-box">
+    <div style="text-align: center;">
       <h1 class="main-game-title">삼국지 영웅전</h1>
-      <p class="sub-game-title">⚔️ 천하 삼분의 난세를 평정하고 천하통일을 달성하라 ⚔️</p>
+      <p class="sub-game-title">⚔️ 1:1 전술 카드 체스 듀얼 (Card Tactics Duel) ⚔️</p>
       <button id="btnStartGameTitle" class="start-btn-large">
-        ⚔️ 천하를 평정하러 가기
+        ♟️ 1:1 체스 전술 대결 시작하기
       </button>
     </div>
   </div>
@@ -22,328 +22,108 @@
     <!-- 상단 헤더 바 -->
     <header class="game-header">
       <div class="game-title">
-        <span>⚔️</span>
-        <span>삼국지 영웅전</span>
+        <span>♟️</span>
+        <span>삼국지 영웅전 : 1:1 전술 카드 체스</span>
       </div>
 
-      <div class="resource-bar">
-        <div class="resource-item" title="보유 금 (영웅 등용에 사용)">
-          <span class="icon">🪙</span>
-          <span>금:</span>
-          <span id="resGold" class="value">1,000</span>
-        </div>
-        <div class="resource-item" title="보유 군량 (병력 사기 및 보증)">
-          <span class="icon">🌾</span>
-          <span>군량:</span>
-          <span id="resFood" class="value">2,000</span>
-        </div>
-        <div class="resource-item" title="점령 거점 수">
-          <span class="icon">🏰</span>
-          <span>거점:</span>
-          <span id="resCities" class="value">1 / 12</span>
-        </div>
-      </div>
-
-      <!-- 계정 프로필 & 데이터 저장/불러오기 -->
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <div id="userProfileChip" class="user-profile-chip" onclick="openLoginModal()" title="계정 관리">
-          <span id="userAvatar">👤</span>
-          <span id="userName">게스트 접속</span>
-        </div>
-        <button id="btnSaveGame" class="header-btn" style="background: linear-gradient(135deg, #1d4ed8, #2563eb);">💾 저장</button>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button id="btnSelectStage" class="header-btn" style="background: linear-gradient(135deg, #1d4ed8, #2563eb);">🎯 난이도 선택</button>
+        <button id="btnSaveGame" class="header-btn" style="background: linear-gradient(135deg, #059669, #10b981);">💾 저장</button>
         <button id="btnLoadGame" class="header-btn" style="background: linear-gradient(135deg, #475569, #64748b);">📂 불러오기</button>
-        <button id="btnOpenShop" class="header-btn">📜 등용소</button>
-        <button id="btnEndTurn" class="header-btn" style="background: linear-gradient(135deg, #059669, #10b981);">⏭️ 턴 종료</button>
       </div>
     </header>
 
-    <!-- 메인 콘텐트 (사이드바 + 보드 지도) -->
-    <div class="main-content">
-      <!-- 좌측 정보 사이드바 -->
-      <aside class="sidebar">
-        <!-- 세력 패널 -->
-        <div class="panel-card">
-          <div class="panel-title">
-            <span>내 세력</span>
-            <span id="playerFactionBadge" class="faction-badge shu">촉 (蜀)</span>
+    <!-- ♟️ 2. 메인 1:1 체스 전술 레이아웃 -->
+    <div class="duel-main-layout">
+      <!-- 좌측 정보 및 콘솔 바 -->
+      <aside class="duel-sidebar">
+        <!-- 적 군주 패널 -->
+        <div class="leader-status-box">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong id="enemyLeaderName" style="color: #f87171; font-size: 1.1rem;">컴퓨터 AI (맹획)</strong>
+            <span id="enemyStageBadge" style="font-size: 0.8rem; background: #b45309; padding: 2px 6px; border-radius: 4px;">1단계</span>
           </div>
-          <div style="font-size: 0.9rem; color: #cbd5e1;" id="factionRulerText">군주: 유비</div>
-          <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;" id="factionDescText">장수 일기토 무력 보정 +15%</div>
+          <div class="leader-hp-bar">
+            <div id="enemyLeaderHpFill" class="leader-hp-fill enemy" style="width: 100%;"></div>
+          </div>
+          <div id="enemyLeaderHpText" style="font-size: 0.8rem; text-align: right; color: #cbd5e1;">HP 100 / 100</div>
         </div>
 
-        <!-- 보유 장수 목록 (실제 얼굴 초상화 & HP 체력 바 적용) -->
-        <div class="panel-card">
-          <div class="panel-title">
-            <span>출전 명장</span>
-            <span id="heroCountText" style="font-size: 0.85rem; color: var(--gold-light);">1명</span>
+        <!-- 플레이어 군주 패널 -->
+        <div class="leader-status-box" style="margin-top: auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong id="playerLeaderName" style="color: #60a5fa; font-size: 1.1rem;">아군 군주 (유비)</strong>
+            <span style="font-size: 0.8rem; color: var(--gold-light);">아군 HQ</span>
           </div>
-          <div id="heroRoster" class="hero-roster">
-            <!-- JS로 동적 생성 -->
+          <div class="leader-hp-bar">
+            <div id="playerLeaderHpFill" class="leader-hp-fill player" style="width: 100%;"></div>
           </div>
+          <div id="playerLeaderHpText" style="font-size: 0.8rem; text-align: right; color: #cbd5e1;">HP 100 / 100</div>
         </div>
 
-        <!-- 선택한 거점 정보 및 진격 버튼 -->
-        <div class="panel-card" style="margin-top: auto;">
-          <div class="panel-title">선택 거점</div>
-          <div id="selectedCityBox">
-            <div style="text-align: center; color: #94a3b8; padding: 10px;">지도의 거점 노드를 클릭하세요</div>
-          </div>
+        <!-- 전투 진행 로그 -->
+        <div id="duelLogBox" style="background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; font-size: 0.82rem; color: #e2e8f0; height: 160px; overflow-y: auto; border: 1px solid rgba(245, 158, 11, 0.3);">
+          ♟️ 전술 체스 대결에 오신 것을 환영합니다!
         </div>
       </aside>
 
-      <!-- 중앙 대륙 지도 영역 -->
-      <main class="map-container">
-        <canvas id="boardCanvas"></canvas>
-        <div id="mapNodesLayer" class="map-nodes-layer">
-          <!-- JS로 거점 노드 렌더링 -->
+      <!-- 중앙 5x5 전장 체스 그리드 -->
+      <main class="battlefield-container">
+        <div style="font-size: 0.9rem; color: var(--gold-light); margin-bottom: 10px; font-weight: 700;">
+          🏰 적 컴퓨터 HQ (본진)
+        </div>
+
+        <!-- 5x5 그리드 -->
+        <div id="tacticsGrid" class="tactics-grid">
+          <!-- JS로 25개 그리드 셀 생성 -->
+        </div>
+
+        <div style="font-size: 0.9rem; color: var(--gold-light); margin-top: 10px; font-weight: 700;">
+          🛡️ 아군 HQ (본진)
         </div>
       </main>
     </div>
-  </div>
 
-  <!-- AI 턴 알림 전면 오버레이 -->
-  <div id="aiTurnOverlay">
-    <div class="ai-banner-card">
-      <div id="aiTurnIcon" style="font-size: 3.5rem; margin-bottom: 10px;">🐉</div>
-      <h2 id="aiTurnTitle" style="font-size: 2rem; color: var(--gold-light);">위나라 (魏) 턴 진행 중...</h2>
-      <p id="aiTurnDesc" style="color: #cbd5e1; margin-top: 8px;">위나라 조조군이 군사를 정비하고 침공 기회를 엿봅니다.</p>
-    </div>
-  </div>
-
-  <!-- 0. Firebase 로그인 모달 -->
-  <div id="modalAuth" class="modal-overlay">
-    <div class="modal-container" style="max-width: 500px; text-align: center;">
-      <button onclick="closeModal('modalAuth')" style="position: absolute; top: 15px; right: 20px; background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer;">✕</button>
-      <h2 class="modal-title">🔐 군주 계정 인증 🔐</h2>
-      <p style="color: #cbd5e1; margin-bottom: 24px;">
-        구글 계정으로 로그인하거나 비로그인(게스트) 방식으로 진행하여 클라우드에 진행 상태를 안전하게 저장하세요.
-      </p>
-
-      <div style="display: flex; flex-direction: column; gap: 14px;">
-        <button id="btnGoogleAuth" class="header-btn" style="padding: 14px; background: #ea4335; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
-          <span>🌐</span>
-          <span>Google 계정으로 로그인</span>
-        </button>
-        <button id="btnGuestAuth" class="header-btn" style="padding: 14px; background: #475569; font-size: 1.05rem;">
-          <span>👤 비로그인 (게스트 모드) 이용</span>
-        </button>
-        <button id="btnLogoutAuth" class="header-btn" style="padding: 10px; background: #ef4444; font-size: 0.95rem; display: none;">
-          <span>🚪 로그아웃</span>
-        </button>
+    <!-- 🎴 3. 하단 내 손패 (Hand Card List) & 턴 종료 버튼 -->
+    <div class="player-hand-section">
+      <!-- 군량 (SP/마나) -->
+      <div class="mana-sp-bar">
+        <span>🌾 군량 SP:</span>
+        <span class="sp-gem" id="currentSpText">3</span>
+        <span style="font-size: 0.85rem; color: #cbd5e1;">/ 10</span>
       </div>
-    </div>
-  </div>
 
-  <!-- 1. 세력 선택 모달 (게임 시작 시) -->
-  <div id="modalFactionSelect" class="modal-overlay active">
-    <div class="modal-container" style="max-width: 850px;">
-      <h2 class="modal-title">⚔️ 천하를 경영할 군주를 선택하십시오 ⚔️</h2>
-      <p style="text-align: center; color: #cbd5e1; margin-bottom: 20px;">
-        삼국지의 대표 세력 중 하나를 선택하여 대륙의 12개 주요 거점을 점령하고 천하통일을 달성하세요!
-      </p>
-
-      <div class="faction-grid">
-        <div class="faction-card" onclick="selectFaction('wei')">
-          <div class="faction-icon">🐉</div>
-          <div class="faction-name" style="color: var(--wei-color);">위 (魏)</div>
-          <div class="faction-ruler">군주: 조조</div>
-          <p class="faction-desc">
-            "내 차라리 세상 사람을 버릴지언정..."<br><br>
-            매 턴 징병력 및 군량 보급 +20%. 풍부한 영토와 강력한 기병 군단을 자랑합니다.
-          </p>
-        </div>
-
-        <div class="faction-card" onclick="selectFaction('shu')">
-          <div class="faction-icon">🍃</div>
-          <div class="faction-name" style="color: var(--shu-color);">촉 (蜀)</div>
-          <div class="faction-ruler">군주: 유비</div>
-          <p class="faction-desc">
-            "한실의 복원을 위하여!"<br><br>
-            일기토 무력 보정 +15% 및 높은 사기 유지력. 관우, 장비, 제갈량 등 최정예 명장 보유!
-          </p>
-        </div>
-
-        <div class="faction-card" onclick="selectFaction('wu')">
-          <div class="faction-icon">🔥</div>
-          <div class="faction-name" style="color: var(--wu-color);">오 (吳)</div>
-          <div class="faction-ruler">군주: 손권</div>
-          <p class="faction-desc">
-            "강동의 푸른 늑대가 천하를 굽어보리라"<br><br>
-            강가 요충지 전투 시 전투력 +25%. 수군 및 강동의 굳건한 요새 지형에 특화되어 있습니다.
-          </p>
-        </div>
+      <!-- 내 손패 카드들 -->
+      <div id="handCardsList" class="hand-cards-list">
+        <!-- JS 동적 카드리스트 생성 -->
       </div>
+
+      <!-- 턴 종료 버튼 -->
+      <button id="btnEndTurn" class="header-btn" style="padding: 14px 28px; font-size: 1.1rem; background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);">
+        ⏭️ 턴 종료
+      </button>
     </div>
   </div>
 
-  <!-- 🪖 2. 전투 전 [출전 장수 선택 모달] -->
-  <div id="modalHeroSelect" class="modal-overlay">
+  <!-- 🎯 4. 난이도 선택 모달 -->
+  <div id="modalStageSelect" class="modal-overlay">
     <div class="modal-container" style="max-width: 850px;">
-      <button onclick="closeModal('modalHeroSelect')" style="position: absolute; top: 15px; right: 20px; background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer;">✕</button>
-      <h2 id="heroSelectTitle" class="modal-title">⚔️ 출전할 선봉 무장을 선택하십시오 ⚔️</h2>
-      <p style="text-align: center; color: #cbd5e1;">전투에 출전할 무장을 선택하세요. 체력(HP)과 무력 수치가 승패를 가릅니다.</p>
+      <button onclick="closeModal('modalStageSelect')" style="position: absolute; top: 15px; right: 20px; background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer;">✕</button>
+      <h2 class="modal-title">🎯 1:1 대결 난이도 선택 🎯</h2>
+      <p style="text-align: center; color: #cbd5e1; margin-bottom: 24px;">컴퓨터 AI 군주의 난이도를 선택하여 1:1 체스 카드 대결을 시작하세요.</p>
 
-      <div id="heroSelectGrid" class="hero-select-grid">
+      <div id="stageCardGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px;">
         <!-- JS 동적 생성 -->
       </div>
     </div>
   </div>
 
-  <!-- 📜 3. 직관적인 인재 등용소 (Hero Shop Gallery) 모달 -->
-  <div id="modalHeroShop" class="modal-overlay">
-    <div class="modal-container" style="max-width: 960px;">
-      <button onclick="closeModal('modalHeroShop')" style="position: absolute; top: 15px; right: 20px; background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer;">✕</button>
-      <h2 class="modal-title">📜 인재 등용소 (명장 수집 갤러리)</h2>
-      <p style="text-align: center; color: #cbd5e1; margin-bottom: 16px;">보유한 금으로 삼국지 최고의 명장과 군사를 등용하십시오.</p>
-
-      <!-- 등급별 필터 바 -->
-      <div class="shop-filter-bar">
-        <button class="filter-btn active" onclick="filterHeroShop('all')">전체 명장</button>
-        <button class="filter-btn" onclick="filterHeroShop('S')">S급 (전설)</button>
-        <button class="filter-btn" onclick="filterHeroShop('A')">A급 (영웅)</button>
-        <button class="filter-btn" onclick="filterHeroShop('B')">B급 (맹장)</button>
-        <button class="filter-btn" onclick="filterHeroShop('C')">C급 (일반)</button>
-      </div>
-
-      <div id="heroShopGrid" class="hero-shop-grid">
-        <!-- JS 동적 생성 -->
-      </div>
-    </div>
-  </div>
-
-  <!-- 4. 3단계 미니게임 전투 모달 -->
-  <div id="modalBattle" class="modal-overlay">
-    <div class="modal-container" style="max-width: 850px;">
-      <h2 id="battleCityTitle" class="modal-title">⚔️ 낙양 공성전 ⚔️</h2>
-
-      <div class="battle-modal-body">
-        <!-- 단계 배너 -->
-        <div class="battle-stage-banner">
-          <div id="battleStageStep" class="stage-num">1단계 [난이도: 하]</div>
-          <div id="battleStageTitle" class="stage-title">일기토 (Single Combat) 동시 공개 심리전</div>
-        </div>
-
-        <!-- 1단계: 일기토 뷰 -->
-        <div id="viewStage1" class="stage-view">
-          <div class="duel-arena">
-            <div class="duel-fighter">
-              <img id="playerDuelHeroImg" class="fighter-portrait-lg" src="" alt="아군 무장">
-              <div id="playerDuelHeroName" style="font-weight: 700; color: var(--gold-light);">관우</div>
-              <div id="playerDuelWar" style="font-size: 0.85rem; color: #94a3b8;">무력: 97</div>
-              <!-- 무장 HP 바 -->
-              <div class="hero-hp-container">
-                <div class="hero-hp-bar"><div id="playerHpFill" class="hp-fill" style="width: 100%;"></div></div>
-                <div id="playerHpText" class="hp-text">HP: 115 / 115</div>
-              </div>
-            </div>
-
-            <!-- 동시 공개 Clash 카운터 디스플레이 -->
-            <div class="reveal-clash-box">
-              <div id="playerChoiceReveal" class="reveal-card hidden">
-                <span style="font-size: 2rem;">❓</span>
-                <span>아군 선택</span>
-              </div>
-
-              <div class="vs-badge">VS</div>
-
-              <div id="enemyChoiceReveal" class="reveal-card hidden">
-                <span style="font-size: 2rem;">❓</span>
-                <span>적군 선택</span>
-              </div>
-            </div>
-
-            <div class="duel-fighter">
-              <img id="enemyDuelHeroImg" class="fighter-portrait-lg" src="" alt="적군 무장">
-              <div id="enemyDuelHeroName" style="font-weight: 700; color: #f87171;">적 수성장</div>
-              <div id="enemyDuelWar" style="font-size: 0.85rem; color: #94a3b8;">무력: 80</div>
-              <!-- 적 무장 HP 바 -->
-              <div class="hero-hp-container">
-                <div class="hero-hp-bar"><div id="enemyHpFill" class="hp-fill danger" style="width: 100%;"></div></div>
-                <div id="enemyHpText" class="hp-text">HP: 90 / 90</div>
-              </div>
-            </div>
-          </div>
-
-          <p style="text-align: center; margin-top: 15px; font-size: 0.95rem; color: #cbd5e1;">
-            상수를 예측하고 패를 내세요. 체력(HP)이 0이 되면 전사합니다! (<b>맹공 > 치명 > 견고 > 맹공</b>)
-          </p>
-          <div class="duel-actions">
-            <button class="duel-btn" onclick="playDuelRoundSimultaneous('attack')">
-              <span>🗡️ 맹공 (공격)</span>
-              <span style="font-size: 0.75rem; color: #94a3b8;">치명(기습)에 승리</span>
-            </button>
-            <button class="duel-btn" onclick="playDuelRoundSimultaneous('defense')">
-              <span>🛡️ 견고 (방어)</span>
-              <span style="font-size: 0.75rem; color: #94a3b8;">맹공(공격)에 승리</span>
-            </button>
-            <button class="duel-btn" onclick="playDuelRoundSimultaneous('surprise')">
-              <span>⚡ 치명 (기습)</span>
-              <span style="font-size: 0.75rem; color: #94a3b8;">견고(방어)에 승리</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 2단계: 전술 카드 동시 제출 뷰 -->
-        <div id="viewStage2" class="stage-view" style="display: none;">
-          <p style="text-align: center; color: #cbd5e1;">아군 덱과 적군 AI의 덱이 **동시에 제출되어** 전술이 겨루어집니다!</p>
-
-          <div class="reveal-clash-box">
-            <div id="playerCardReveal" class="reveal-card hidden">
-              <span style="font-size: 2rem;">🃏</span>
-              <span>아군 전술</span>
-            </div>
-
-            <div class="vs-badge">CLASH</div>
-
-            <div id="enemyCardReveal" class="reveal-card hidden">
-              <span style="font-size: 2rem;">🃏</span>
-              <span>적군 전술</span>
-            </div>
-          </div>
-
-          <div style="text-align: center; font-weight: 700; color: var(--gold-light); margin-top: 8px;">
-            남은 전술 포인트: <span id="currentManaText">5</span> SP
-          </div>
-
-          <div id="tacticalCardHand" class="card-hand">
-            <!-- JS 동적 카드리스트 생성 -->
-          </div>
-        </div>
-
-        <!-- 3단계: 종합 전면전 뷰 -->
-        <div id="viewStage3" class="stage-view" style="display: none;">
-          <p style="text-align: center; color: #cbd5e1;">장수의 통솔력 + 병력 + 병종 상성이 결합된 총력전 시뮬레이션입니다.</p>
-          <div class="battle-meter-container">
-            <div style="display: flex; justify-content: space-between; font-weight: 700;">
-              <span style="color: var(--wei-color);" id="playerArmyLabel">아군 병력: 1500</span>
-              <span style="color: var(--wu-color);" id="enemyArmyLabel">적군 병력: 1200</span>
-            </div>
-            <div class="meter-bar-bg">
-              <div id="playerArmyBar" class="meter-bar-fill player" style="width: 50%;"></div>
-              <div id="enemyArmyBar" class="meter-bar-fill enemy" style="width: 50%;"></div>
-            </div>
-          </div>
-          <button id="btnExecuteFullBattle" class="header-btn" style="width: 100%; margin-top: 20px; padding: 14px; font-size: 1.2rem;" onclick="executeStage3Battle()">
-            ⚔️ 전군 돌격! (최종 결전)
-          </button>
-        </div>
-
-        <!-- 전투 메시지 피드백 log -->
-        <div id="battleLogBox" style="background: rgba(0,0,0,0.5); padding: 12px; border-radius: 8px; font-size: 0.9rem; color: #e2e8f0; max-height: 100px; overflow-y: auto; margin-top: 10px;">
-          전투 준비 완료.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 5. 천하통일 승리 모달 -->
-  <div id="modalVictory" class="modal-overlay">
-    <div class="modal-container" style="text-align: center; max-width: 600px;">
-      <h2 class="modal-title" style="font-size: 2.4rem; color: #f59e0b;">🏆 천 하 통 일 🏆</h2>
-      <p style="font-size: 1.2rem; color: #fef08a; margin: 20px 0;">
-        축하합니다! 삼국 대륙의 모든 거점을 점령하고 난세를 평정하였습니다!
-      </p>
-      <button class="header-btn" style="padding: 12px 30px; font-size: 1.1rem;" onclick="location.reload()">🔄 새로운 천하 창대하기</button>
+  <!-- 🏆 5. 승리 / 패배 결과 모달 -->
+  <div id="modalResult" class="modal-overlay">
+    <div class="modal-container" style="text-align: center; max-width: 550px;">
+      <h2 id="resultTitle" class="modal-title" style="font-size: 2.4rem;">🏆 대 승 리 🏆</h2>
+      <p id="resultDesc" style="font-size: 1.1rem; color: #fef08a; margin: 20px 0;">적 군주를 격파하고 1:1 체스 전술 듀얼에서 승리했습니다!</p>
+      <button class="header-btn" style="padding: 12px 30px; font-size: 1.1rem;" onclick="closeModal('modalResult')">🔄 대결 다시하기</button>
     </div>
   </div>
 

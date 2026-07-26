@@ -1,4 +1,4 @@
-// 삼국지 영웅전 메인 게임 엔진 (코에이풍 명장 갤러리 카드 & 등급별 필터 등용소)
+// 삼국지 영웅전 : 1:1 전술 카드 체스 듀얼 메인 엔진
 import { 
   loginWithGoogle, 
   loginAsGuest, 
@@ -9,34 +9,39 @@ import {
 } from "./firebase-config.js";
 
 let currentUser = null;
-let currentShopFilter = 'all';
 
+// 게임 듀얼 상태
 let gameState = {
-  playerFaction: null,
-  currentTurnFaction: null,
+  currentStage: AI_STAGES[0],
+  playerHp: 100,
+  playerMaxHp: 100,
+  enemyHp: 100,
+  enemyMaxHp: 100,
+  playerSp: 3,
+  maxSp: 10,
   turnCount: 1,
-  gold: 1000,
-  food: 2000,
-  cities: JSON.parse(JSON.stringify(CITIES)),
-  recruitingHeroes: [],
-  selectedCityId: null,
-  pendingBattleCity: null,
-  pendingIsDefensive: false,
-  battle: null
+  isPlayerTurn: true,
+  
+  // 5x5 체스 그리드 보드 상태 (null 또는 Unit 객체)
+  grid: Array(5).fill(null).map(() => Array(5).fill(null)),
+  
+  // 내 손패 카드 5장
+  playerHand: [],
+  
+  // 현재 선택된 항목 ('card' 또는 'unit')
+  selectedType: null,
+  selectedCard: null,
+  selectedUnitPos: null,
+  
+  movableCells: [],
+  attackableCells: []
 };
 
-window.selectFaction = selectFaction;
-window.buyHero = buyHero;
-window.playDuelRoundSimultaneous = playDuelRoundSimultaneous;
-window.executeStage3Battle = executeStage3Battle;
 window.closeModal = closeModal;
-window.openLoginModal = openLoginModal;
-window.confirmHeroSelect = confirmHeroSelect;
-window.filterHeroShop = filterHeroShop;
+window.selectStage = selectStage;
 
 document.addEventListener('DOMContentLoaded', () => {
-  initCanvas();
-  window.addEventListener('resize', initCanvas);
+  initGame();
 
   const btnStart = document.getElementById('btnStartGameTitle');
   if (btnStart) {
@@ -46,77 +51,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  document.getElementById('btnOpenShop').addEventListener('click', openHeroShop);
-  document.getElementById('btnEndTurn').addEventListener('click', processEndTurn);
+  document.getElementById('btnEndTurn').addEventListener('click', endPlayerTurn);
+  document.getElementById('btnSelectStage').addEventListener('click', openStageSelectModal);
   document.getElementById('btnSaveGame').addEventListener('click', handleSaveGame);
   document.getElementById('btnLoadGame').addEventListener('click', handleLoadGame);
 
-  document.getElementById('btnGoogleAuth').addEventListener('click', handleGoogleLogin);
-  document.getElementById('btnGuestAuth').addEventListener('click', handleGuestLogin);
-  document.getElementById('btnLogoutAuth').addEventListener('click', handleLogout);
-
   listenAuthState((user) => {
-    if (user) {
-      currentUser = user;
-      updateUserUI(user);
-    } else {
-      handleGuestLogin();
-    }
+    if (user) currentUser = user;
+    else handleGuestLogin();
   });
 });
-
-function openLoginModal() {
-  document.getElementById('modalAuth').classList.add('active');
-}
-
-function updateUserUI(user) {
-  const nameEl = document.getElementById('userName');
-  const avatarEl = document.getElementById('userAvatar');
-  const logoutBtn = document.getElementById('btnLogoutAuth');
-
-  if (user) {
-    nameEl.textContent = user.displayName || (user.isAnonymous ? '익명 군주' : user.email);
-    avatarEl.textContent = user.photoURL ? '👤' : (user.isAnonymous ? '👤' : '🌐');
-    if (logoutBtn) logoutBtn.style.display = 'block';
-  }
-}
-
-async function handleGoogleLogin() {
-  const user = await loginWithGoogle();
-  if (user) {
-    currentUser = user;
-    updateUserUI(user);
-    closeModal('modalAuth');
-    alert(`환영합니다, ${user.displayName || '군주'}님! 구글 계정이 연동되었습니다.`);
-  }
-}
 
 async function handleGuestLogin() {
   const user = await loginAsGuest();
   currentUser = user;
-  updateUserUI(user);
-  closeModal('modalAuth');
-}
-
-async function handleLogout() {
-  await logoutUser();
-  currentUser = null;
-  handleGuestLogin();
 }
 
 async function handleSaveGame() {
-  if (!gameState.playerFaction) {
-    alert("게임을 시작한 후 저장할 수 있습니다.");
-    return;
-  }
-
   const saveData = {
-    playerFaction: gameState.playerFaction,
-    gold: gameState.gold,
-    food: gameState.food,
-    turnCount: gameState.turnCount,
-    cities: gameState.cities,
-    recruitingHeroes: gameState.recruitingHeroes
+    currentStageId: gameState.currentStage.id,
+    playerHp: gameState.playerHp,
+    enemyHp: gameState.enemyHp,
+    playerSp: gameState.playerSp,
+    turnCount: gameState.turnCount
   };
 
   const userId = currentUser ? currentUser.uid : 'guest';
@@ -124,7 +81,7 @@ async function handleSaveGame() {
 
   if (result.success) {
     soundManager.playVictory();
-    alert(result.isLocal ? "💾 게임 진행 상황이 로컬 저장소에 저장되었습니다." : "☁️ 게임 진행 상황이 Firebase 클라우드에 성공적으로 저장되었습니다!");
+    alert("💾 1:1 체스 대결 진행 상황이 성공적으로 저장되었습니다!");
   }
 }
 
@@ -137,723 +94,501 @@ async function handleLoadGame() {
     return;
   }
 
-  gameState.playerFaction = data.playerFaction;
-  gameState.gold = data.gold;
-  gameState.food = data.food;
+  const stage = AI_STAGES.find(s => s.id === data.currentStageId) || AI_STAGES[0];
+  selectStage(stage.id);
+
+  gameState.playerHp = data.playerHp || 100;
+  gameState.enemyHp = data.enemyHp || 100;
+  gameState.playerSp = data.playerSp || 3;
   gameState.turnCount = data.turnCount || 1;
-  gameState.cities = data.cities;
-  gameState.recruitingHeroes = data.recruitingHeroes || [];
 
-  const faction = FACTIONS[gameState.playerFaction];
-  if (faction) {
-    document.getElementById('playerFactionBadge').textContent = faction.name;
-    document.getElementById('playerFactionBadge').className = `faction-badge ${gameState.playerFaction}`;
-    document.getElementById('factionRulerText').textContent = `군주: ${faction.ruler}`;
-    document.getElementById('factionDescText').textContent = faction.description;
-  }
-
-  closeModal('modalFactionSelect');
-  document.getElementById('titleScreen').classList.add('hidden');
-  updateResourcesUI();
-  renderHeroRoster();
-  renderCityNodes();
-  drawBoardMap();
-
+  updateUI();
   soundManager.playVictory();
-  alert("📂 저장된 삼국지 영웅전 데이터를 성공적으로 불러왔습니다!");
+  alert("📂 저장된 체스 대결 데이터를 불러왔습니다!");
 }
 
-function selectFaction(factionId) {
-  gameState.playerFaction = factionId;
-  gameState.currentTurnFaction = factionId;
-  const faction = FACTIONS[factionId];
+function initGame() {
+  gameState.grid = Array(5).fill(null).map(() => Array(5).fill(null));
+  gameState.playerHp = 100;
+  gameState.enemyHp = gameState.currentStage.bossHp;
+  gameState.enemyMaxHp = gameState.currentStage.bossMaxHp;
+  gameState.playerSp = 3;
+  gameState.turnCount = 1;
+  gameState.isPlayerTurn = true;
 
-  const capitalCity = gameState.cities.find(c => c.name.includes(faction.capital));
-  if (capitalCity) {
-    capitalCity.owner = factionId;
-    capitalCity.troops = 2000;
-  }
+  // 초기 아군 패 4장 생성
+  gameState.playerHand = [
+    JSON.parse(JSON.stringify(HERO_CARDS.find(h => h.id === 'guan_yu'))),
+    JSON.parse(JSON.stringify(HERO_CARDS.find(h => h.id === 'zhao_yun'))),
+    JSON.parse(JSON.stringify(HERO_CARDS.find(h => h.id === 'huang_zhong'))),
+    JSON.parse(JSON.stringify(TACTICAL_SPELL_CARDS.find(c => c.id === 'fire_attack')))
+  ];
 
-  let defaultHero;
-  if (factionId === 'shu') defaultHero = HEROES.find(h => h.id === 'guan_yu');
-  else if (factionId === 'wei') defaultHero = HEROES.find(h => h.id === 'cao_cao');
-  else defaultHero = HEROES.find(h => h.id === 'zhou_yu');
+  // 초기 아군 보병 1명 소환된 상태로 시작
+  const defaultUnit = JSON.parse(JSON.stringify(HERO_CARDS.find(h => h.id === 'cao_ren')));
+  defaultUnit.owner = 'player';
+  defaultUnit.hp = defaultUnit.maxHp;
+  gameState.grid[4][2] = defaultUnit;
 
-  if (defaultHero) {
-    const copyHero = JSON.parse(JSON.stringify(defaultHero));
-    gameState.recruitingHeroes.push(copyHero);
-  }
+  // 컴퓨터 AI 기본 유닛 소환
+  const enemyUnit = JSON.parse(JSON.stringify(HERO_CARDS.find(h => h.id === 'xiahoudun')));
+  enemyUnit.owner = 'enemy';
+  enemyUnit.hp = enemyUnit.maxHp;
+  gameState.grid[0][2] = enemyUnit;
 
-  document.getElementById('playerFactionBadge').textContent = faction.name;
-  document.getElementById('playerFactionBadge').className = `faction-badge ${factionId}`;
-  document.getElementById('factionRulerText').textContent = `군주: ${faction.ruler}`;
-  document.getElementById('factionDescText').textContent = faction.description;
-
-  closeModal('modalFactionSelect');
-  updateResourcesUI();
-  renderHeroRoster();
-  renderCityNodes();
-  drawBoardMap();
-
-  soundManager.playVictory();
+  renderGrid();
+  renderHand();
+  updateUI();
+  logDuel(`[대결 시작] ${gameState.currentStage.name} 대결이 시작되었습니다!`);
 }
 
-function updateResourcesUI() {
-  document.getElementById('resGold').textContent = gameState.gold.toLocaleString();
-  document.getElementById('resFood').textContent = gameState.food.toLocaleString();
-
-  const ownedCount = gameState.cities.filter(c => c.owner === gameState.playerFaction).length;
-  document.getElementById('resCities').textContent = `${ownedCount} / ${gameState.cities.length}`;
-
-  if (ownedCount >= gameState.cities.length) {
-    document.getElementById('modalVictory').classList.add('active');
-    soundManager.playVictory();
-  }
-}
-
-function renderHeroRoster() {
-  const container = document.getElementById('heroRoster');
+function openStageSelectModal() {
+  const container = document.getElementById('stageCardGrid');
   container.innerHTML = '';
 
-  document.getElementById('heroCountText').textContent = `${gameState.recruitingHeroes.length}명`;
-
-  gameState.recruitingHeroes.forEach(hero => {
-    const hpPercent = Math.max(0, Math.round((hero.hp / hero.maxHp) * 100));
-    const isHpDanger = hpPercent < 40;
-
-    const chip = document.createElement('div');
-    chip.className = `hero-chip rank-${hero.rank}`;
-    chip.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <img class="hero-portrait-img" src="${hero.img}" alt="${hero.name}" onerror="this.src='${hero.fallbackImg || 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/400px-Chinese_Officer_Portrait.jpg'}';">
-        <div>
-          <div><strong style="color: #f8fafc;">${hero.name}</strong> <span class="hero-chip-rank ${hero.rank}">${hero.rank}</span></div>
-          <div style="font-size: 0.75rem; color: var(--gold-light);">⚔️${hero.war} | 🧠${hero.int}</div>
-        </div>
-      </div>
-      <div class="hero-hp-container">
-        <div class="hero-hp-bar">
-          <div class="hp-fill ${isHpDanger ? 'danger' : ''}" style="width: ${hpPercent}%;"></div>
-        </div>
-        <div class="hp-text">HP ${hero.hp}/${hero.maxHp}</div>
-      </div>
-    `;
-    container.appendChild(chip);
-  });
-}
-
-function initCanvas() {
-  const canvas = document.getElementById('boardCanvas');
-  const container = canvas.parentElement;
-  canvas.width = container.clientWidth;
-  canvas.height = container.clientHeight;
-  drawBoardMap();
-}
-
-function drawBoardMap() {
-  const canvas = document.getElementById('boardCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const width = canvas.width;
-  const height = canvas.height;
-
-  ctx.clearRect(0, 0, width, height);
-
-  ROAD_CONNECTIONS.forEach(([fromId, toId]) => {
-    const fromCity = gameState.cities.find(c => c.id === fromId);
-    const toCity = gameState.cities.find(c => c.id === toId);
-
-    if (fromCity && toCity) {
-      const x1 = (fromCity.x / 100) * width;
-      const y1 = (fromCity.y / 100) * height;
-      const x2 = (toCity.x / 100) * width;
-      const y2 = (toCity.y / 100) * height;
-
-      const isPlayerPath = (fromCity.owner === gameState.playerFaction && toCity.owner === gameState.playerFaction);
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.lineWidth = isPlayerPath ? 4 : 2;
-      ctx.strokeStyle = isPlayerPath ? '#f59e0b' : 'rgba(148, 163, 184, 0.35)';
-      if (!isPlayerPath) ctx.setLineDash([6, 6]);
-      else ctx.setLineDash([]);
-      ctx.stroke();
-    }
-  });
-
-  renderCityNodes();
-}
-
-function renderCityNodes() {
-  const layer = document.getElementById('mapNodesLayer');
-  if (!layer) return;
-  layer.innerHTML = '';
-
-  gameState.cities.forEach(city => {
-    const node = document.createElement('div');
-    node.className = `city-node`;
-    node.style.left = `${city.x}%`;
-    node.style.top = `${city.y}%`;
-
-    const isAdjacent = isCityAdjacentToPlayer(city.id);
-    const isOwner = city.owner === gameState.playerFaction;
-
-    if (!isOwner && isAdjacent) {
-      node.classList.add('selectable');
-    }
-
-    const firstChar = city.name.charAt(0);
-    node.innerHTML = `
-      <div class="city-flag owner-${city.owner}">
-        ${firstChar}
-      </div>
-      <div class="city-label">
-        ${city.name}
-        <div class="city-troops">🗡️ ${city.troops}</div>
-      </div>
-    `;
-
-    node.addEventListener('click', () => onCityClick(city));
-    layer.appendChild(node);
-  });
-}
-
-function isCityAdjacentToPlayer(cityId) {
-  const playerCityIds = gameState.cities.filter(c => c.owner === gameState.playerFaction).map(c => c.id);
-
-  return ROAD_CONNECTIONS.some(([from, to]) => {
-    if (from === cityId && playerCityIds.includes(to)) return true;
-    if (to === cityId && playerCityIds.includes(from)) return true;
-    return false;
-  });
-}
-
-function onCityClick(city) {
-  gameState.selectedCityId = city.id;
-  soundManager.playGong();
-
-  const container = document.getElementById('selectedCityBox');
-  const isOwner = city.owner === gameState.playerFaction;
-  const isAdjacent = isCityAdjacentToPlayer(city.id);
-
-  const ownerFactionName = FACTIONS[city.owner]?.name || '중립 영주';
-
-  container.innerHTML = `
-    <div style="font-size: 1.1rem; font-weight: 700; color: var(--gold-light);">${city.name}</div>
-    <div style="font-size: 0.85rem; color: #cbd5e1; margin-top: 4px;">지배 세력: ${ownerFactionName}</div>
-    <div style="font-size: 0.85rem; color: #cbd5e1;">수성 병력: 🗡️ ${city.troops}명</div>
-    <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 6px;">${city.desc}</div>
-  `;
-
-  if (!isOwner && isAdjacent) {
-    const attackBtn = document.createElement('button');
-    attackBtn.className = 'header-btn';
-    attackBtn.style.cssText = 'width: 100%; margin-top: 12px; padding: 10px; background: linear-gradient(135deg, #dc2626, #ef4444);';
-    attackBtn.innerHTML = '⚔️ 출진하기 (선봉장 선택)';
-    attackBtn.onclick = () => openHeroSelectModal(city, false);
-    container.appendChild(attackBtn);
-  } else if (isOwner) {
-    const infoText = document.createElement('div');
-    infoText.style.cssText = 'margin-top: 10px; font-size: 0.85rem; color: #34d399; text-align: center;';
-    infoText.textContent = '아군이 점령한 거점입니다.';
-    container.appendChild(infoText);
-  } else {
-    const infoText = document.createElement('div');
-    infoText.style.cssText = 'margin-top: 10px; font-size: 0.8rem; color: #94a3b8; text-align: center;';
-    infoText.textContent = '인접한 아군 거점이 없어 공격할 수 없습니다.';
-    container.appendChild(infoText);
-  }
-}
-
-// -------------------------------------------------------------
-// 🪖 출전 장수 선택 갤러리 모달
-// -------------------------------------------------------------
-function openHeroSelectModal(targetCity, isDefensive = false) {
-  gameState.pendingBattleCity = targetCity;
-  gameState.pendingIsDefensive = isDefensive;
-
-  const grid = document.getElementById('heroSelectGrid');
-  grid.innerHTML = '';
-
-  document.getElementById('heroSelectTitle').textContent = isDefensive ? `🛡️ ${targetCity.name} 수성 방어전 선봉장 선택 🛡️` : `⚔️ ${targetCity.name} 공성전 선봉장 선택 ⚔️`;
-
-  gameState.recruitingHeroes.forEach((hero, index) => {
-    const hpPercent = Math.max(0, Math.round((hero.hp / hero.maxHp) * 100));
-
+  AI_STAGES.forEach(stage => {
     const card = document.createElement('div');
-    card.className = 'hero-select-card';
+    card.style.cssText = `
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 2px solid ${stage.color};
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.2s ease;
+    `;
     card.innerHTML = `
-      <img class="portrait-large" src="${hero.img}" alt="${hero.name}" onerror="this.src='${hero.fallbackImg || 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/400px-Chinese_Officer_Portrait.jpg'}';">
-      <div class="hero-select-name">${hero.name}</div>
-      <div class="hero-select-title">${hero.title}</div>
-      
-      <div class="stat-row">
-        <span>⚔️ 무력: <b>${hero.war}</b></span>
-        <span>🧠 지력: <b>${hero.int}</b></span>
-      </div>
-
-      <div class="hero-hp-container" style="width: 100%;">
-        <div class="hero-hp-bar"><div class="hp-fill" style="width: ${hpPercent}%;"></div></div>
-        <div class="hp-text">HP ${hero.hp} / ${hero.maxHp}</div>
-      </div>
-
-      <button class="btn-select-hero-action">⚔️ 선봉장으로 출전!</button>
+      <div style="font-size: 2.5rem;">${stage.icon}</div>
+      <div style="font-size: 1.2rem; font-weight: 900; color: #fff;">${stage.name}</div>
+      <div style="font-size: 0.85rem; color: var(--gold-light);">보스 체력: ${stage.bossHp} HP</div>
+      <div style="font-size: 0.78rem; color: #cbd5e1; text-align: center;">${stage.desc}</div>
+      <button class="header-btn" style="margin-top: 8px; width: 100%; background: ${stage.color};">⚔️ 도전하기</button>
     `;
 
-    card.onclick = () => confirmHeroSelect(index);
-    grid.appendChild(card);
+    card.onclick = () => selectStage(stage.id);
+    container.appendChild(card);
   });
 
-  document.getElementById('modalHeroSelect').classList.add('active');
+  document.getElementById('modalStageSelect').classList.add('active');
 }
 
-function confirmHeroSelect(heroIndex) {
-  const selectedHero = gameState.recruitingHeroes[heroIndex];
-  if (!selectedHero) return;
+function selectStage(stageId) {
+  const stage = AI_STAGES.find(s => s.id === stageId);
+  if (!stage) return;
 
-  closeModal('modalHeroSelect');
-  startBattle(gameState.pendingBattleCity, selectedHero, gameState.pendingIsDefensive);
+  gameState.currentStage = stage;
+  closeModal('modalStageSelect');
+  initGame();
+}
+
+function updateUI() {
+  document.getElementById('enemyLeaderName').textContent = `${gameState.currentStage.bossName}`;
+  document.getElementById('enemyStageBadge').textContent = `${gameState.currentStage.name.split(':')[0]}`;
+
+  const enemyHpPercent = Math.max(0, Math.round((gameState.enemyHp / gameState.enemyMaxHp) * 100));
+  const playerHpPercent = Math.max(0, Math.round((gameState.playerHp / gameState.playerMaxHp) * 100));
+
+  document.getElementById('enemyLeaderHpFill').style.width = `${enemyHpPercent}%`;
+  document.getElementById('enemyLeaderHpText').textContent = `HP ${gameState.enemyHp} / ${gameState.enemyMaxHp}`;
+
+  document.getElementById('playerLeaderHpFill').style.width = `${playerHpPercent}%`;
+  document.getElementById('playerLeaderHpText').textContent = `HP ${gameState.playerHp} / ${gameState.playerMaxHp}`;
+
+  document.getElementById('currentSpText').textContent = gameState.playerSp;
 }
 
 // -------------------------------------------------------------
-// 📜 인재 등용 창 (코에이 삼국지 갤러리 방식 & 필터링)
+// ♟️ 5x5 그리드 렌더링 및 클릭 상호작용
 // -------------------------------------------------------------
-function filterHeroShop(rankFilter) {
-  currentShopFilter = rankFilter;
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.classList.remove('active');
-  });
-  event.target.classList.add('active');
-  renderHeroShop();
-}
+function renderGrid() {
+  const gridEl = document.getElementById('tacticsGrid');
+  gridEl.innerHTML = '';
 
-function openHeroShop() {
-  soundManager.playGong();
-  renderHeroShop();
-  document.getElementById('modalHeroShop').classList.add('active');
-}
+  for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 5; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'grid-cell';
 
-function renderHeroShop() {
-  const grid = document.getElementById('heroShopGrid');
-  grid.innerHTML = '';
+      const isMovable = gameState.movableCells.some(m => m.r === r && m.c === c);
+      const isAttackable = gameState.attackableCells.some(a => a.r === r && a.c === c);
 
-  const filteredHeroes = HEROES.filter(h => {
-    if (currentShopFilter === 'all') return true;
-    return h.rank === currentShopFilter;
-  });
+      if (isMovable) cell.classList.add('cell-movable');
+      if (isAttackable) cell.classList.add('cell-attackable');
 
-  filteredHeroes.forEach(hero => {
-    const isRecruited = gameState.recruitingHeroes.some(h => h.id === hero.id);
-    const canAfford = gameState.gold >= hero.cost;
+      const unit = gameState.grid[r][c];
+      if (unit) {
+        const unitEl = document.createElement('div');
+        unitEl.className = `grid-unit ${unit.owner === 'player' ? 'player-unit' : 'enemy-unit'}`;
+        
+        if (gameState.selectedUnitPos && gameState.selectedUnitPos.r === r && gameState.selectedUnitPos.c === c) {
+          unitEl.classList.add('selected');
+        }
 
-    const card = document.createElement('div');
-    card.className = `hero-shop-card rank-${hero.rank}`;
-    card.innerHTML = `
-      <div class="shop-portrait-container">
-        <img class="shop-portrait-img" src="${hero.img}" alt="${hero.name}" onerror="this.src='${hero.fallbackImg || 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/400px-Chinese_Officer_Portrait.jpg'}';">
-        <span class="shop-rank-badge ${hero.rank}">${hero.rank}급</span>
-      </div>
+        const hpPercent = Math.max(0, Math.round((unit.hp / unit.maxHp) * 100));
 
-      <div class="shop-hero-name">${hero.name}</div>
-      <div class="shop-hero-title">${hero.title}</div>
+        unitEl.innerHTML = `
+          <img class="unit-img" src="${unit.img}" alt="${unit.name}">
+          <div class="unit-hp-bar"><div class="unit-hp-fill" style="width: ${hpPercent}%;"></div></div>
+          <div class="unit-atk-badge">⚔️${unit.atk}</div>
+        `;
+        cell.appendChild(unitEl);
+      }
 
-      <div class="shop-stat-bar-box">
-        <div class="shop-stat-item"><span>⚔️ 무력 수치</span><span class="shop-stat-value">${hero.war}</span></div>
-        <div class="shop-stat-item"><span>🧠 지력 수치</span><span class="shop-stat-value">${hero.int}</span></div>
-        <div class="shop-stat-item"><span>🛡️ 통솔 수치</span><span class="shop-stat-value">${hero.lead}</span></div>
-        <div class="shop-stat-item"><span>❤️ 최대 체력</span><span class="shop-stat-value">${hero.maxHp} HP</span></div>
-      </div>
-
-      <div style="font-size: 0.72rem; color: #94a3b8; font-style: italic; margin-bottom: 12px; height: 32px;">"${hero.quote}"</div>
-
-      <button class="buy-hero-btn" ${isRecruited || !canAfford ? 'disabled' : ''} onclick="buyHero('${hero.id}')">
-        ${isRecruited ? '등용 완료' : `🪙 ${hero.cost} 금으로 명장 등용`}
-      </button>
-    `;
-    grid.appendChild(card);
-  });
-}
-
-function buyHero(heroId) {
-  const hero = HEROES.find(h => h.id === heroId);
-  if (!hero || gameState.gold < hero.cost) return;
-
-  gameState.gold -= hero.cost;
-  const copyHero = JSON.parse(JSON.stringify(hero));
-  gameState.recruitingHeroes.push(copyHero);
-
-  soundManager.playVictory();
-  updateResourcesUI();
-  renderHeroRoster();
-  renderHeroShop();
-}
-
-function startBattle(targetCity, selectedHero, isDefensive = false) {
-  const enemyWar = Math.floor(65 + Math.random() * 25);
-  const enemyMaxHp = 100;
-  
-  const enemyHero = { 
-    name: `${targetCity.name} 수성 장수`, 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/400px-Chinese_Officer_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/400px-Chinese_Officer_Portrait.jpg', 
-    war: enemyWar, 
-    int: Math.floor(50 + Math.random() * 30), 
-    lead: Math.floor(60 + Math.random() * 30),
-    maxHp: enemyMaxHp,
-    hp: enemyMaxHp
-  };
-
-  gameState.battle = {
-    city: targetCity,
-    isDefensive: isDefensive,
-    playerHero: selectedHero,
-    enemyHero: enemyHero,
-    stage: 1,
-    duelScore: 0,
-    sp: Math.floor(selectedHero.int / 20) + 2,
-    moraleBuff: 1.0,
-    playerArmy: 1500 + selectedHero.lead * 5,
-    enemyArmy: targetCity.troops
-  };
-
-  document.getElementById('battleCityTitle').textContent = isDefensive ? `🛡️ ${targetCity.name} 수성 방어전 🛡️` : `⚔️ ${targetCity.name} 공성전 ⚔️`;
-  
-  document.getElementById('playerDuelHeroImg').src = selectedHero.img;
-  document.getElementById('playerDuelHeroName').textContent = selectedHero.name;
-  document.getElementById('playerDuelWar').textContent = `무력: ${selectedHero.war} (${selectedHero.title})`;
-
-  document.getElementById('enemyDuelHeroImg').src = enemyHero.img;
-  document.getElementById('enemyDuelHeroName').textContent = enemyHero.name;
-  document.getElementById('enemyDuelWar').textContent = `무력: ${enemyHero.war}`;
-
-  updateHeroHpUI();
-  resetRevealCards();
-  switchBattleStageView(1);
-  document.getElementById('modalBattle').classList.add('active');
-  logBattle(`[전투 개시] 선봉장 [${selectedHero.name}] (HP:${selectedHero.hp}/${selectedHero.maxHp}) 이(가) 출전합니다.`);
-}
-
-function updateHeroHpUI() {
-  const b = gameState.battle;
-  if (!b) return;
-
-  const pHpPercent = Math.max(0, Math.round((b.playerHero.hp / b.playerHero.maxHp) * 100));
-  const eHpPercent = Math.max(0, Math.round((b.enemyHero.hp / b.enemyHero.maxHp) * 100));
-
-  const pHpFill = document.getElementById('playerHpFill');
-  const eHpFill = document.getElementById('enemyHpFill');
-
-  if (pHpFill) pHpFill.style.width = `${pHpPercent}%`;
-  if (eHpFill) eHpFill.style.width = `${eHpPercent}%`;
-
-  document.getElementById('playerHpText').textContent = `HP: ${b.playerHero.hp} / ${b.playerHero.maxHp}`;
-  document.getElementById('enemyHpText').textContent = `HP: ${b.enemyHero.hp} / ${b.enemyHero.maxHp}`;
-}
-
-function resetRevealCards() {
-  const pCard = document.getElementById('playerChoiceReveal');
-  const eCard = document.getElementById('enemyChoiceReveal');
-  if (pCard && eCard) {
-    pCard.className = 'reveal-card hidden';
-    pCard.innerHTML = '<span style="font-size: 2rem;">❓</span><span>아군 선택</span>';
-    eCard.className = 'reveal-card hidden';
-    eCard.innerHTML = '<span style="font-size: 2rem;">❓</span><span>적군 선택</span>';
-  }
-
-  const pCard2 = document.getElementById('playerCardReveal');
-  const eCard2 = document.getElementById('enemyCardReveal');
-  if (pCard2 && eCard2) {
-    pCard2.className = 'reveal-card hidden';
-    pCard2.innerHTML = '<span style="font-size: 2rem;">🃏</span><span>아군 전술</span>';
-    eCard2.className = 'reveal-card hidden';
-    eCard2.innerHTML = '<span style="font-size: 2rem;">🃏</span><span>적군 전술</span>';
-  }
-}
-
-function switchBattleStageView(stageNum) {
-  gameState.battle.stage = stageNum;
-  document.getElementById('viewStage1').style.display = stageNum === 1 ? 'block' : 'none';
-  document.getElementById('viewStage2').style.display = stageNum === 2 ? 'block' : 'none';
-  document.getElementById('viewStage3').style.display = stageNum === 3 ? 'block' : 'none';
-
-  if (stageNum === 1) {
-    document.getElementById('battleStageStep').textContent = '1단계 [난이도: 하]';
-    document.getElementById('battleStageTitle').textContent = '일기토 (Single Combat) 동시 공개 심리전';
-  } else if (stageNum === 2) {
-    document.getElementById('battleStageStep').textContent = '2단계 [난이도: 중]';
-    document.getElementById('battleStageTitle').textContent = '전술 카드 동시 제출 (Tactical Clash)';
-    renderTacticalCards();
-  } else if (stageNum === 3) {
-    document.getElementById('battleStageStep').textContent = '3단계 [난이도: 상]';
-    document.getElementById('battleStageTitle').textContent = '종합 전면전 (Full Battlefield)';
-    updateBattleMeterUI();
-  }
-}
-
-function playDuelRoundSimultaneous(playerChoice) {
-  const choices = ['attack', 'defense', 'surprise'];
-  const enemyChoice = choices[Math.floor(Math.random() * choices.length)];
-
-  soundManager.playSwordClash();
-
-  const choiceIcons = { attack: '🗡️ 맹공', defense: '🛡️ 견고', surprise: '⚡ 치명' };
-
-  const pCard = document.getElementById('playerChoiceReveal');
-  const eCard = document.getElementById('enemyChoiceReveal');
-
-  pCard.className = 'reveal-card hidden';
-  pCard.innerHTML = '<span>카드 제출 중...</span>';
-  eCard.className = 'reveal-card hidden';
-  eCard.innerHTML = '<span>카드 제출 중...</span>';
-
-  setTimeout(() => {
-    soundManager.playGong();
-
-    pCard.className = 'reveal-card clash-anim';
-    pCard.innerHTML = `<span style="font-size: 2.2rem;">${choiceIcons[playerChoice].split(' ')[0]}</span><span>${choiceIcons[playerChoice].split(' ')[1]}</span>`;
-
-    eCard.className = 'reveal-card clash-anim';
-    eCard.innerHTML = `<span style="font-size: 2.2rem;">${choiceIcons[enemyChoice].split(' ')[0]}</span><span>${choiceIcons[enemyChoice].split(' ')[1]}</span>`;
-
-    let result = 'draw';
-    if (
-      (playerChoice === 'attack' && enemyChoice === 'surprise') ||
-      (playerChoice === 'defense' && enemyChoice === 'attack') ||
-      (playerChoice === 'surprise' && enemyChoice === 'defense')
-    ) {
-      result = 'win';
-    } else if (playerChoice !== enemyChoice) {
-      result = 'lose';
+      cell.addEventListener('click', () => onCellClick(r, c));
+      gridEl.appendChild(cell);
     }
+  }
+}
 
-    const b = gameState.battle;
+function onCellClick(r, c) {
+  if (!gameState.isPlayerTurn) return;
 
-    if (result === 'win') {
-      b.duelScore += 1;
-      b.moraleBuff += 0.2;
-      b.sp += 2;
-      const dmg = 25;
-      b.enemyHero.hp = Math.max(0, b.enemyHero.hp - dmg);
-      logBattle(`💥 [아군 승리!] 아군 (${choiceIcons[playerChoice]}) VS 적군 (${choiceIcons[enemyChoice]}) -> 적 장수 체력 -${dmg}!`);
-    } else if (result === 'lose') {
-      b.duelScore -= 1;
-      const dmg = 25;
-      b.playerHero.hp = Math.max(0, b.playerHero.hp - dmg);
-      logBattle(`💥 [적군 승리!] 아군 (${choiceIcons[playerChoice]}) VS 적군 (${choiceIcons[enemyChoice]}) -> 아군 무장 체력 -${dmg}!`);
-    } else {
-      logBattle(`⚖️ [무승부!] 양측 무장이 팽팽히 맞섰습니다.`);
-    }
+  const targetUnit = gameState.grid[r][c];
 
-    updateHeroHpUI();
-    renderHeroRoster();
+  // 1. 손패 카드가 선택되어 있는 경우 (소환 또는 주문)
+  if (gameState.selectedType === 'card' && gameState.selectedCard) {
+    const card = gameState.selectedCard;
 
-    if (b.playerHero.hp <= 0) {
-      soundManager.playDefeat();
-      logBattle(`☠️ [무장 전사!] ${b.playerHero.name} 장수가 치명상을 입고 사망(전열 이탈)했습니다!`);
-      gameState.recruitingHeroes = gameState.recruitingHeroes.filter(h => h.name !== b.playerHero.name);
-      renderHeroRoster();
-
-      setTimeout(() => {
-        alert(`☠️ [무장 전사] 아군 무장 ${b.playerHero.name}이(가) 전투 중 사망했습니다!`);
-        closeModal('modalBattle');
-      }, 1200);
+    if (card.type === 'spell') {
+      // 전술 주문 사용
+      executeSpell(card, r, c);
       return;
     }
 
-    setTimeout(() => {
-      switchBattleStageView(2);
-    }, 1500);
-  }, 500);
-}
+    // 무장 소환: 아군 진영 (행 3 또는 4의 빈 공간)
+    if ((r === 3 || r === 4) && !targetUnit) {
+      if (gameState.playerSp < card.cost) {
+        logDuel(`군량(SP)이 부족합니다! (필요: ${card.cost})`);
+        return;
+      }
 
-function renderTacticalCards() {
-  document.getElementById('currentManaText').textContent = gameState.battle.sp;
-  const hand = document.getElementById('tacticalCardHand');
-  hand.innerHTML = '';
+      gameState.playerSp -= card.cost;
+      const newUnit = JSON.parse(JSON.stringify(card));
+      newUnit.owner = 'player';
+      newUnit.hp = newUnit.maxHp;
 
-  TACTICAL_CARDS.forEach(card => {
-    const cardEl = document.createElement('div');
-    cardEl.className = 'tactical-card';
-    cardEl.innerHTML = `
-      <div class="card-cost">⚡ ${card.cost}</div>
-      <div class="card-icon">${card.icon}</div>
-      <div class="card-title">${card.name}</div>
-      <div class="card-desc">${card.desc}</div>
-    `;
+      gameState.grid[r][c] = newUnit;
 
-    cardEl.onclick = () => useTacticalCardSimultaneous(card);
-    hand.appendChild(cardEl);
-  });
-}
+      // 손패에서 제거
+      gameState.playerHand = gameState.playerHand.filter(h => h !== card);
+      clearSelection();
 
-function useTacticalCardSimultaneous(playerCard) {
-  if (gameState.battle.sp < playerCard.cost) {
-    logBattle(`전술 포인트(SP)가 부족합니다! (필요: ${playerCard.cost})`);
+      soundManager.playGong();
+      logDuel(`♟️ [소환] ${newUnit.name} 무장이 전장 (${r + 1}행 ${c + 1}열)에 소환되었습니다!`);
+      renderGrid();
+      renderHand();
+      updateUI();
+      return;
+    }
+  }
+
+  // 2. 이미 배치된 아군 유닛을 선택한 경우
+  if (targetUnit && targetUnit.owner === 'player') {
+    gameState.selectedType = 'unit';
+    gameState.selectedCard = null;
+    gameState.selectedUnitPos = { r, c };
+
+    calculateUnitActions(r, c, targetUnit);
+    renderGrid();
+    renderHand();
     return;
   }
 
-  gameState.battle.sp -= playerCard.cost;
-  soundManager.playGong();
+  // 3. 체스 이동 실행
+  const isMovable = gameState.movableCells.some(m => m.r === r && m.c === c);
+  if (isMovable && gameState.selectedUnitPos) {
+    const { r: sr, c: sc } = gameState.selectedUnitPos;
+    const unit = gameState.grid[sr][sc];
 
-  const enemyCard = TACTICAL_CARDS[Math.floor(Math.random() * TACTICAL_CARDS.length)];
+    gameState.grid[r][c] = unit;
+    gameState.grid[sr][sc] = null;
 
-  const pCard = document.getElementById('playerCardReveal');
-  const eCard = document.getElementById('enemyCardReveal');
+    soundManager.playDrum();
+    logDuel(`🐎 [이동] ${unit.name} 무장이 (${r + 1}행 ${c + 1}열) 위치로 기동했습니다.`);
 
-  pCard.className = 'reveal-card clash-anim';
-  pCard.innerHTML = `<span style="font-size: 2rem;">${playerCard.icon}</span><span>${playerCard.name}</span>`;
+    clearSelection();
+    renderGrid();
+    renderHand();
+    return;
+  }
 
-  eCard.className = 'reveal-card clash-anim';
-  eCard.innerHTML = `<span style="font-size: 2rem;">${enemyCard.icon}</span><span>${enemyCard.name}</span>`;
+  // 4. 공격 실행
+  const isAttackable = gameState.attackableCells.some(a => a.r === r && a.c === c);
+  if (isAttackable && gameState.selectedUnitPos) {
+    const { r: sr, c: sc } = gameState.selectedUnitPos;
+    const attacker = gameState.grid[sr][sc];
 
-  const playerDmg = playerCard.power * 10;
-  const enemyDmg = enemyCard.power * 8;
+    if (targetUnit && targetUnit.owner === 'enemy') {
+      soundManager.playSwordClash();
+      targetUnit.hp -= attacker.atk;
+      logDuel(`💥 [공격] ${attacker.name} -> 적 ${targetUnit.name}에게 ${attacker.atk} 데미지!`);
 
-  const b = gameState.battle;
-  b.enemyArmy = Math.max(0, b.enemyArmy - playerDmg);
-  b.playerArmy = Math.max(0, b.playerArmy - enemyDmg);
-  b.moraleBuff += 0.15;
+      if (targetUnit.hp <= 0) {
+        logDuel(`☠️ [파괴] 적 ${targetUnit.name} 부대가 파괴되었습니다!`);
+        gameState.grid[r][c] = null;
+      }
+    } else if (r === 0) {
+      // 적 군주 본체 타격
+      soundManager.playSwordClash();
+      gameState.enemyHp = Math.max(0, gameState.enemyHp - attacker.atk);
+      logDuel(`⚡ [본체 타격!] ${attacker.name} 장수가 적 군주 본체에 ${attacker.atk} 데미지를 입혔습니다!`);
 
-  logBattle(`🔥 [전술 덱 Clash!] 아군 [${playerCard.name}] VS 적군 [${enemyCard.name}] 동시에 발동!`);
-
-  document.getElementById('currentManaText').textContent = b.sp;
-
-  setTimeout(() => {
-    switchBattleStageView(3);
-  }, 1600);
-}
-
-function updateBattleMeterUI() {
-  const b = gameState.battle;
-  document.getElementById('playerArmyLabel').textContent = `아군 병력: ${Math.round(b.playerArmy)}`;
-  document.getElementById('enemyArmyLabel').textContent = `적군 병력: ${Math.round(b.enemyArmy)}`;
-  document.getElementById('playerArmyBar').style.width = `50%`;
-  document.getElementById('enemyArmyBar').style.width = `50%`;
-}
-
-function executeStage3Battle() {
-  soundManager.playDrum();
-
-  const b = gameState.battle;
-  const playerPower = b.playerArmy * (b.playerHero.lead / 80) * b.moraleBuff;
-  const enemyPower = b.enemyArmy * 0.9;
-
-  const total = playerPower + enemyPower;
-  const playerPercent = Math.round((playerPower / total) * 100);
-  const enemyPercent = 100 - playerPercent;
-
-  document.getElementById('playerArmyBar').style.width = `${playerPercent}%`;
-  document.getElementById('enemyArmyBar').style.width = `${enemyPercent}%`;
-
-  const isWin = playerPower > enemyPower;
-
-  setTimeout(() => {
-    if (isWin) {
-      soundManager.playVictory();
-      b.city.owner = gameState.playerFaction;
-      b.city.troops = Math.floor(b.playerArmy * 0.7);
-
-      const rewardGold = 400;
-      const rewardFood = 500;
-      gameState.gold += rewardGold;
-      gameState.food += rewardFood;
-
-      logBattle(`🎉 [전면전 대승리!] ${b.city.name} 거점을 점령했습니다! (보상: 🪙+${rewardGold}, 🌾+${rewardFood})`);
-      updateResourcesUI();
-      drawBoardMap();
-
-      setTimeout(() => {
-        closeModal('modalBattle');
-      }, 1500);
-    } else {
-      soundManager.playDefeat();
-      logBattle(`💥 [전면전 패배] 적의 방어선에 밀렸습니다.`);
-      setTimeout(() => {
-        closeModal('modalBattle');
-      }, 1500);
+      if (gameState.enemyHp <= 0) {
+        handleVictory();
+        return;
+      }
     }
+
+    clearSelection();
+    renderGrid();
+    renderHand();
+    updateUI();
+    return;
+  }
+
+  clearSelection();
+  renderGrid();
+  renderHand();
+}
+
+function calculateUnitActions(r, c, unit) {
+  gameState.movableCells = [];
+  gameState.attackableCells = [];
+
+  const range = unit.moveRange || 1;
+
+  // 이동 가능 셀 (상하좌우 4방향)
+  const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+  dirs.forEach(([dr, dc]) => {
+    for (let step = 1; step <= range; step++) {
+      const nr = r + dr * step;
+      const nc = c + dc * step;
+
+      if (nr >= 0 && nr < 5 && nc >= 0 && nc < 5) {
+        if (!gameState.grid[nr][nc]) {
+          gameState.movableCells.push({ r: nr, c: nc });
+        } else {
+          break; // 다른 유닛에 막힘
+        }
+      }
+    }
+  });
+
+  // 공격 가능 셀 (적 유닛 위치 또는 행 0 적 HQ)
+  dirs.forEach(([dr, dc]) => {
+    const nr = r + dr * unit.attackRange;
+    const nc = c + dc * unit.attackRange;
+
+    if (nr >= 0 && nr < 5 && nc >= 0 && nc < 5) {
+      const target = gameState.grid[nr][nc];
+      if (target && target.owner === 'enemy') {
+        gameState.attackableCells.push({ r: nr, c: nc });
+      }
+    }
+  });
+
+  // 적 HQ(컴퓨터 본체) 타격 가능 여부 (행 0에 접했을 때)
+  if (r === 0 || (r === 1 && unit.attackRange >= 2)) {
+    gameState.attackableCells.push({ r: 0, c: c });
+  }
+}
+
+function executeSpell(spellCard, r, c) {
+  if (gameState.playerSp < spellCard.cost) {
+    logDuel(`군량(SP)이 부족합니다! (필요: ${spellCard.cost})`);
+    return;
+  }
+
+  const targetUnit = gameState.grid[r][c];
+
+  if (targetUnit && targetUnit.owner === 'enemy') {
+    gameState.playerSp -= spellCard.cost;
+    soundManager.playGong();
+
+    targetUnit.hp -= spellCard.power;
+    logDuel(`🔥 [전술 주문] ${spellCard.name} 발동! 적 ${targetUnit.name}에게 ${spellCard.power} 피해!`);
+
+    if (targetUnit.hp <= 0) {
+      gameState.grid[r][c] = null;
+    }
+
+    gameState.playerHand = gameState.playerHand.filter(h => h !== spellCard);
+    clearSelection();
+    renderGrid();
+    renderHand();
+    updateUI();
+  } else if (r === 0) {
+    gameState.playerSp -= spellCard.cost;
+    soundManager.playGong();
+
+    gameState.enemyHp = Math.max(0, gameState.enemyHp - spellCard.power);
+    logDuel(`🔥 [전술 주문] ${spellCard.name} 발동! 적 군주 본체에 ${spellCard.power} 피해!`);
+
+    if (gameState.enemyHp <= 0) {
+      handleVictory();
+      return;
+    }
+
+    gameState.playerHand = gameState.playerHand.filter(h => h !== spellCard);
+    clearSelection();
+    renderGrid();
+    renderHand();
+    updateUI();
+  } else {
+    logDuel(`전술 주문은 적 유닛이나 적 본체(행 1)를 타겟으로 지정해야 합니다.`);
+  }
+}
+
+function clearSelection() {
+  gameState.selectedType = null;
+  gameState.selectedCard = null;
+  gameState.selectedUnitPos = null;
+  gameState.movableCells = [];
+  gameState.attackableCells = [];
+}
+
+// -------------------------------------------------------------
+// 🎴 내 손패 렌더링
+// -------------------------------------------------------------
+function renderHand() {
+  const container = document.getElementById('handCardsList');
+  container.innerHTML = '';
+
+  gameState.playerHand.forEach((card, index) => {
+    const cardEl = document.createElement('div');
+    cardEl.className = 'hand-card';
+
+    if (gameState.selectedCard === card) {
+      cardEl.classList.add('selected-card');
+    }
+
+    cardEl.innerHTML = `
+      <div class="hand-card-cost">${card.cost}</div>
+      <img class="hand-card-img" src="${card.img || './assets/guan_yu.svg'}" alt="${card.name}">
+      <div class="hand-card-name">${card.name}</div>
+      <div class="hand-card-desc">${card.desc}</div>
+    `;
+
+    cardEl.onclick = () => {
+      if (!gameState.isPlayerTurn) return;
+      gameState.selectedType = 'card';
+      gameState.selectedCard = card;
+      gameState.selectedUnitPos = null;
+      gameState.movableCells = [];
+      gameState.attackableCells = [];
+
+      renderGrid();
+      renderHand();
+    };
+
+    container.appendChild(cardEl);
+  });
+}
+
+// -------------------------------------------------------------
+// ⏭️ 턴 종료 & 컴퓨터 AI 턴 수행
+// -------------------------------------------------------------
+function endPlayerTurn() {
+  if (!gameState.isPlayerTurn) return;
+
+  gameState.isPlayerTurn = false;
+  clearSelection();
+  renderGrid();
+
+  logDuel(`--- 턴 종료 ---`);
+  logDuel(`🤖 컴퓨터 AI (${gameState.currentStage.bossName}) 턴 수행 중...`);
+
+  setTimeout(processAiTurn, 1000);
+}
+
+function processAiTurn() {
+  // 1. AI 전장에 있는 적 유닛들의 전진 & 공격
+  for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 5; c++) {
+      const unit = gameState.grid[r][c];
+      if (unit && unit.owner === 'enemy') {
+        // 아군 유닛 또는 플레이어 HQ(행 4) 공격 시도
+        if (r === 3 || r === 4) {
+          // 아군 HQ 타격
+          gameState.playerHp = Math.max(0, gameState.playerHp - unit.atk);
+          logDuel(`💥 [적 AI 타격!] ${unit.name} 부대가 아군 본체를 공격하여 ${unit.atk} 피해!`);
+
+          if (gameState.playerHp <= 0) {
+            handleDefeat();
+            return;
+          }
+        } else if (r < 4 && !gameState.grid[r + 1][c]) {
+          // 전진
+          gameState.grid[r + 1][c] = unit;
+          gameState.grid[r][c] = null;
+        }
+      }
+    }
+  }
+
+  // 2. AI 새로운 무장 소환 (행 0 또는 행 1의 빈 공간)
+  const availableAiCardIds = gameState.currentStage.deck;
+  const randomCardId = availableAiCardIds[Math.floor(Math.random() * availableAiCardIds.length)];
+
+  const heroCard = HERO_CARDS.find(h => h.id === randomCardId);
+  if (heroCard) {
+    for (let c = 0; c < 5; c++) {
+      if (!gameState.grid[0][c]) {
+        const newEnemy = JSON.parse(JSON.stringify(heroCard));
+        newEnemy.owner = 'enemy';
+        newEnemy.hp = newEnemy.maxHp;
+        gameState.grid[0][c] = newEnemy;
+        logDuel(`🤖 [적 AI 소환] ${newEnemy.name} 장수를 (${c + 1}열)에 소환했습니다.`);
+        break;
+      }
+    }
+  }
+
+  // 3. 턴 복귀 & 자원 획득
+  setTimeout(() => {
+    gameState.turnCount++;
+    gameState.playerSp = Math.min(gameState.maxSp, gameState.playerSp + 2);
+
+    // 내 손패 카드 1장 드로우 (최대 5장)
+    if (gameState.playerHand.length < 5) {
+      const randomHero = HERO_CARDS[Math.floor(Math.random() * HERO_CARDS.length)];
+      gameState.playerHand.push(JSON.parse(JSON.stringify(randomHero)));
+    }
+
+    gameState.isPlayerTurn = true;
+    updateUI();
+    renderGrid();
+    renderHand();
+    logDuel(`--- 턴 ${gameState.turnCount} 시작 (아군 턴) ---`);
   }, 1000);
 }
 
-function logBattle(msg) {
-  const box = document.getElementById('battleLogBox');
+function handleVictory() {
+  soundManager.playVictory();
+  document.getElementById('resultTitle').textContent = `🏆 대 승 리 🏆`;
+  document.getElementById('resultTitle').style.color = `#f59e0b`;
+  document.getElementById('resultDesc').textContent = `적 ${gameState.currentStage.bossName}의 HQ를 격파하고 1:1 체스 대결에서 승리했습니다!`;
+  document.getElementById('modalResult').classList.add('active');
+}
+
+function handleDefeat() {
+  soundManager.playDefeat();
+  document.getElementById('resultTitle').textContent = `💥 대 패 배 💥`;
+  document.getElementById('resultTitle').style.color = `#ef4444`;
+  document.getElementById('resultDesc').textContent = `아군 HQ가 적에게 함락되었습니다. 전술을 재정비하십시오!`;
+  document.getElementById('modalResult').classList.add('active');
+}
+
+function logDuel(msg) {
+  const box = document.getElementById('duelLogBox');
   const p = document.createElement('p');
   p.style.marginBottom = '4px';
   p.textContent = msg;
   box.appendChild(p);
   box.scrollTop = box.scrollHeight;
-}
-
-function processEndTurn() {
-  soundManager.playGong();
-
-  const ownedCities = gameState.cities.filter(c => c.owner === gameState.playerFaction);
-  const incomeGold = ownedCities.length * 150;
-  const incomeFood = ownedCities.length * 250;
-
-  gameState.gold += incomeGold;
-  gameState.food += incomeFood;
-
-  gameState.recruitingHeroes.forEach(h => {
-    h.hp = Math.min(h.maxHp, h.hp + 15);
-  });
-
-  updateResourcesUI();
-  renderHeroRoster();
-
-  const otherFactions = Object.keys(FACTIONS).filter(f => f !== gameState.playerFaction);
-
-  runAiFactionTurn(otherFactions[0], () => {
-    runAiFactionTurn(otherFactions[1], () => {
-      gameState.turnCount++;
-      renderCityNodes();
-      drawBoardMap();
-    });
-  });
-}
-
-function runAiFactionTurn(factionId, onComplete) {
-  const faction = FACTIONS[factionId];
-  const overlay = document.getElementById('aiTurnOverlay');
-  document.getElementById('aiTurnIcon').textContent = factionId === 'wei' ? '🐉' : (factionId === 'shu' ? '🍃' : '🔥');
-  document.getElementById('aiTurnTitle').textContent = `${faction.name} 턴 진행 중...`;
-  document.getElementById('aiTurnDesc').textContent = `${faction.ruler} 군주가 병력을 충원하고 영토 확장을 모색합니다.`;
-
-  overlay.classList.add('active');
-
-  setTimeout(() => {
-    const aiCities = gameState.cities.filter(c => c.owner === factionId);
-    aiCities.forEach(c => {
-      c.troops = Math.min(c.maxTroops, c.troops + 200);
-    });
-
-    let attackedPlayerCity = null;
-    if (aiCities.length > 0) {
-      for (let aiCity of aiCities) {
-        const adjacentCityIds = ROAD_CONNECTIONS.filter(([f, t]) => f === aiCity.id || t === aiCity.id).map(([f, t]) => f === aiCity.id ? t : f);
-        const playerAdjacent = gameState.cities.find(c => adjacentCityIds.includes(c.id) && c.owner === gameState.playerFaction);
-        const neutralAdjacent = gameState.cities.find(c => adjacentCityIds.includes(c.id) && c.owner === 'neutral');
-
-        if (neutralAdjacent) {
-          neutralAdjacent.owner = factionId;
-          neutralAdjacent.troops = 1000;
-          break;
-        } else if (playerAdjacent && Math.random() < 0.4) {
-          attackedPlayerCity = playerAdjacent;
-          break;
-        }
-      }
-    }
-
-    overlay.classList.remove('active');
-
-    if (attackedPlayerCity) {
-      alert(`⚠️ [침공 경보!] ${faction.name} 군대가 아군의 [${attackedPlayerCity.name}] 거점을 침공했습니다! 방어전에 임하십시오.`);
-      openHeroSelectModal(attackedPlayerCity, true);
-    }
-
-    if (onComplete) onComplete();
-  }, 1200);
 }
 
 function closeModal(modalId) {

@@ -1,4 +1,4 @@
-// 삼국지 영웅전 : 8x8 정통 체스 엔진 (외형 실루엣 중심의 3D 체스 피스 디자인 적용)
+// 삼국지 영웅전 : 8x8 정통 체스 엔진 (3단계 스토리텔링 캠페인 & 난이도별 AI)
 import { 
   loginWithGoogle, 
   loginAsGuest, 
@@ -12,7 +12,7 @@ let currentUser = null;
 
 let gameState = {
   playerFactionId: 'shu',
-  aiFactionId: 'wei',
+  currentCampaign: STORY_CAMPAIGNS[0],
   
   board: Array(8).fill(null).map(() => Array(8).fill(null)),
   
@@ -28,12 +28,21 @@ let gameState = {
   aiCaptured: []
 };
 
-window.selectFaction = selectFaction;
+window.pickPlayerFaction = pickPlayerFaction;
 window.restartGame = restartGame;
 
 document.addEventListener('DOMContentLoaded', () => {
+  renderCampaignCards();
+
   document.getElementById('btnRestart').addEventListener('click', () => {
     document.getElementById('titleScreen').classList.remove('hidden');
+  });
+
+  document.getElementById('btnStartBattle').addEventListener('click', () => {
+    closeModal('modalStoryBriefing');
+    document.getElementById('titleScreen').classList.add('hidden');
+    soundManager.playDrum();
+    initBoard();
   });
 
   document.getElementById('btnSaveGame').addEventListener('click', handleSaveGame);
@@ -53,7 +62,7 @@ async function handleGuestLogin() {
 async function handleSaveGame() {
   const saveData = {
     playerFactionId: gameState.playerFactionId,
-    aiFactionId: gameState.aiFactionId,
+    campaignId: gameState.currentCampaign.id,
     board: gameState.board,
     playerCaptured: gameState.playerCaptured,
     aiCaptured: gameState.aiCaptured,
@@ -65,7 +74,7 @@ async function handleSaveGame() {
 
   if (result.success) {
     soundManager.playVictory();
-    alert("💾 8x8 삼국지 체스 대결 상황이 성공적으로 저장되었습니다!");
+    alert("💾 체스 스토리 캠페인 상황이 성공적으로 저장되었습니다!");
   }
 }
 
@@ -79,7 +88,9 @@ async function handleLoadGame() {
   }
 
   gameState.playerFactionId = data.playerFactionId || 'shu';
-  gameState.aiFactionId = data.aiFactionId || 'wei';
+  const stage = STORY_CAMPAIGNS.find(s => s.id === data.campaignId) || STORY_CAMPAIGNS[0];
+  gameState.currentCampaign = stage;
+
   gameState.board = data.board;
   gameState.playerCaptured = data.playerCaptured || [];
   gameState.aiCaptured = data.aiCaptured || [];
@@ -91,19 +102,62 @@ async function handleLoadGame() {
   updateCapturedUI();
 
   soundManager.playVictory();
-  alert("📂 저장된 8x8 체스 게임을 불러왔습니다!");
+  alert("📂 저장된 체스 스토리 캠페인을 불러왔습니다!");
 }
 
-function selectFaction(factionId) {
+function pickPlayerFaction(factionId) {
   gameState.playerFactionId = factionId;
-  
-  if (factionId === 'shu') gameState.aiFactionId = 'wei';
-  else if (factionId === 'wei') gameState.aiFactionId = 'wu';
-  else gameState.aiFactionId = 'shu';
 
-  document.getElementById('titleScreen').classList.add('hidden');
-  soundManager.playDrum();
-  initBoard();
+  ['Shu', 'Wei', 'Wu'].forEach(f => {
+    const btn = document.getElementById(`btnFaction${f}`);
+    if (btn) btn.classList.remove('active');
+  });
+
+  const selectedBtn = document.getElementById(`btnFaction${factionId.charAt(0).toUpperCase() + factionId.slice(1)}`);
+  if (selectedBtn) selectedBtn.classList.add('active');
+}
+
+function renderCampaignCards() {
+  const container = document.getElementById('campaignCardList');
+  container.innerHTML = '';
+
+  STORY_CAMPAIGNS.forEach(stage => {
+    const card = document.createElement('div');
+    card.style.cssText = `
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 2px solid ${stage.color};
+      border-radius: 14px;
+      padding: 18px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.25s ease;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+    `;
+
+    card.innerHTML = `
+      <div style="font-size: 2.8rem;">${stage.icon}</div>
+      <div style="font-size: 1.15rem; font-weight: 900; color: #fff;">${stage.title}</div>
+      <div style="font-size: 0.85rem; color: var(--gold-light); font-weight: 700;">난이도: ${stage.level}</div>
+      <div style="font-size: 0.8rem; color: #cbd5e1; text-align: center;">${stage.bossName}</div>
+      <button class="header-btn" style="margin-top: 8px; width: 100%; background: ${stage.color}; font-weight: 900;">📜 도전 & 브리핑 보기</button>
+    `;
+
+    card.onclick = () => showStoryBriefing(stage);
+    container.appendChild(card);
+  });
+}
+
+function showStoryBriefing(stage) {
+  gameState.currentCampaign = stage;
+
+  document.getElementById('briefingIcon').textContent = stage.icon;
+  document.getElementById('briefingTitle').textContent = stage.title;
+  document.getElementById('briefingContent').textContent = stage.briefing;
+
+  document.getElementById('modalStoryBriefing').classList.add('active');
 }
 
 function restartGame() {
@@ -113,15 +167,17 @@ function restartGame() {
 
 function updateFactionInfo() {
   const pFact = CHESS_FACTIONS[gameState.playerFactionId];
-  const aFact = CHESS_FACTIONS[gameState.aiFactionId];
+  const aFact = gameState.currentCampaign.aiFaction;
 
   document.getElementById('playerFactionName').textContent = `아군 (${pFact.name})`;
   document.getElementById('playerKingName').textContent = `킹: ${pFact.pieces.king.name.split(' ')[0]} | 퀸: ${pFact.pieces.queen.name.split(' ')[0]}`;
   document.getElementById('playerFactionIcon').textContent = gameState.playerFactionId === 'shu' ? '🍃' : (gameState.playerFactionId === 'wei' ? '🐉' : '🔥');
 
   document.getElementById('aiFactionName').textContent = `컴퓨터 AI (${aFact.name})`;
-  document.getElementById('aiKingName').textContent = `킹: ${aFact.pieces.king.name.split(' ')[0]} | 퀸: ${aFact.pieces.queen.name.split(' ')[0]}`;
-  document.getElementById('aiFactionIcon').textContent = gameState.aiFactionId === 'shu' ? '🍃' : (gameState.aiFactionId === 'wei' ? '🐉' : '🔥');
+  document.getElementById('aiKingName').textContent = `킹: ${aFact.ruler} | 난이도: ${gameState.currentCampaign.level}`;
+  document.getElementById('aiFactionIcon').textContent = gameState.currentCampaign.icon;
+
+  document.getElementById('headerTitle').textContent = `삼국지 체스 : ${gameState.currentCampaign.title.split(':')[1] || gameState.currentCampaign.title}`;
 }
 
 // -------------------------------------------------------------
@@ -140,7 +196,7 @@ function initBoard() {
   updateFactionInfo();
 
   const pFact = CHESS_FACTIONS[gameState.playerFactionId];
-  const aFact = CHESS_FACTIONS[gameState.aiFactionId];
+  const aFact = gameState.currentCampaign.aiFaction;
 
   // AI 기물 배치
   const mainOrder = ['rook1', 'knight1', 'bishop1', 'queen', 'king', 'bishop2', 'knight2', 'rook2'];
@@ -161,7 +217,7 @@ function initBoard() {
 
   renderBoard();
   updateCapturedUI();
-  logChess(`♟️ 8x8 삼국지 체스가 시작되었습니다! [${pFact.name}] VS [${aFact.name}]`);
+  logChess(`♟️ ${gameState.currentCampaign.title} 대결 시작! [${pFact.name}] VS [${aFact.name}]`);
 }
 
 // -------------------------------------------------------------
@@ -175,37 +231,18 @@ function generateVisualPieceSVG(pieceType, isPlayer) {
 
   let pathData = '';
 
-  // 정통 체스 피스 외형 실루엣 셰이프
   if (pieceType === 'king') {
-    // 십자가 왕관 킹 셰이프
-    pathData = `
-      M 34,10 L 46,10 L 46,18 L 54,18 L 54,26 L 46,26 L 46,32 C 55,32 64,24 64,40 C 64,52 56,58 56,66 L 68,70 L 68,76 L 12,76 L 12,70 L 24,66 C 24,58 16,52 16,40 C 16,24 25,32 34,32 L 34,26 L 26,26 L 26,18 L 34,18 Z
-    `;
+    pathData = `M 34,10 L 46,10 L 46,18 L 54,18 L 54,26 L 46,26 L 46,32 C 55,32 64,24 64,40 C 64,52 56,58 56,66 L 68,70 L 68,76 L 12,76 L 12,70 L 24,66 C 24,58 16,52 16,40 C 16,24 25,32 34,32 L 34,26 L 26,26 L 26,18 L 34,18 Z`;
   } else if (pieceType === 'queen') {
-    // 5봉 봉우리 퀸 왕관 셰이프
-    pathData = `
-      M 16,24 L 24,44 L 32,20 L 40,44 L 48,20 L 56,44 L 64,24 L 60,56 C 60,64 56,68 56,70 L 68,74 L 68,78 L 12,78 L 12,74 L 24,70 C 24,68 20,64 20,56 Z
-    `;
+    pathData = `M 16,24 L 24,44 L 32,20 L 40,44 L 48,20 L 56,44 L 64,24 L 60,56 C 60,64 56,68 56,70 L 68,74 L 68,78 L 12,78 L 12,74 L 24,70 C 24,68 20,64 20,56 Z`;
   } else if (pieceType === 'rook') {
-    // 성곽 탑 룩 셰이프
-    pathData = `
-      M 18,20 L 28,20 L 28,28 L 36,28 L 36,20 L 44,20 L 44,28 L 52,28 L 52,20 L 62,20 L 58,40 L 56,68 L 66,72 L 66,78 L 14,78 L 14,72 L 24,68 L 22,40 Z
-    `;
+    pathData = `M 18,20 L 28,20 L 28,28 L 36,28 L 36,20 L 44,20 L 44,28 L 52,28 L 52,20 L 62,20 L 58,40 L 56,68 L 66,72 L 66,78 L 14,78 L 14,72 L 24,68 L 22,40 Z`;
   } else if (pieceType === 'knight') {
-    // 말머리 나이트 셰이프
-    pathData = `
-      M 32,16 C 44,16 58,24 58,38 C 58,46 50,52 54,58 C 58,64 64,66 64,72 L 64,78 L 16,78 L 16,72 C 16,62 26,56 26,44 C 26,34 18,36 18,28 C 18,20 24,16 32,16 Z
-    `;
+    pathData = `M 32,16 C 44,16 58,24 58,38 C 58,46 50,52 54,58 C 58,64 64,66 64,72 L 64,78 L 16,78 L 16,72 C 16,62 26,56 26,44 C 26,34 18,36 18,28 C 18,20 24,16 32,16 Z`;
   } else if (pieceType === 'bishop') {
-    // 뾰족한 비숍 성직자 모자 셰이프
-    pathData = `
-      M 40,12 C 43,12 45,14 45,17 C 45,20 43,22 40,22 C 37,22 35,20 35,17 C 35,14 37,12 40,12 Z M 40,24 C 52,24 60,38 56,56 C 56,64 58,68 58,72 L 66,74 L 66,78 L 14,78 L 14,74 L 22,72 C 22,68 24,64 24,56 C 20,38 28,24 40,24 Z
-    `;
+    pathData = `M 40,12 C 43,12 45,14 45,17 C 45,20 43,22 40,22 C 37,22 35,20 35,17 C 35,14 37,12 40,12 Z M 40,24 C 52,24 60,38 56,56 C 56,64 58,68 58,72 L 66,74 L 66,78 L 14,78 L 14,74 L 22,72 C 22,68 24,64 24,56 C 20,38 28,24 40,24 Z`;
   } else {
-    // 둥근 폰 셰이프
-    pathData = `
-      M 40,18 C 48,18 54,24 54,32 C 54,38 48,42 46,46 L 50,62 L 60,68 L 60,76 L 20,76 L 20,68 L 30,62 L 34,46 C 32,42 26,38 26,32 C 26,24 32,18 40,18 Z
-    `;
+    pathData = `M 40,18 C 48,18 54,24 54,32 C 54,38 48,42 46,46 L 50,62 L 60,68 L 60,76 L 20,76 L 20,68 L 30,62 L 34,46 C 32,42 26,38 26,32 C 26,24 32,18 40,18 Z`;
   }
 
   return `
@@ -222,9 +259,6 @@ function generateVisualPieceSVG(pieceType, isPlayer) {
   `;
 }
 
-// -------------------------------------------------------------
-// ♟️ 외형 실루엣 체스 피스 렌더링
-// -------------------------------------------------------------
 function renderBoard() {
   const boardEl = document.getElementById('chessBoard8x8');
   boardEl.innerHTML = '';
@@ -257,10 +291,8 @@ function renderBoard() {
         const visualPiece = document.createElement('div');
         visualPiece.className = 'chess-visual-piece';
 
-        // 1. 체스 피스 실루엣 SVG
         const svgHTML = generateVisualPieceSVG(piece.pieceType, isPlayer);
 
-        // 2. 무장 초상화 원형 인셋
         visualPiece.innerHTML = `
           ${svgHTML}
           <img class="piece-portrait-inset" src="${piece.img}" alt="${piece.name}" onerror="this.src='${piece.fallbackImg || './assets/guan_yu.svg'}';">
@@ -425,11 +457,12 @@ function makeMove(fromR, fromC, toR, toC) {
 }
 
 // -------------------------------------------------------------
-// 🤖 컴퓨터 지능형 체스 AI Engine
+// 🤖 3단계 난이도별 지능형 체스 AI Engine (Easy, Medium, Hard)
 // -------------------------------------------------------------
 function makeAiChessMove() {
   if (gameState.isGameOver) return;
 
+  const diff = gameState.currentCampaign.aiDifficulty;
   const allAiMoves = [];
 
   for (let r = 0; r < 8; r++) {
@@ -450,17 +483,41 @@ function makeAiChessMove() {
         });
 
         gameState.validMoves.forEach(mv => {
-          allAiMoves.push({ from: { r, c }, to: { r: mv.r, c: mv.c }, score: 1 });
+          let score = 1;
+          // 난이도가 상(hard)일수록 전진 공격 포지션 우선
+          if (diff === 'hard') score += (mv.r * 2);
+          allAiMoves.push({ from: { r, c }, to: { r: mv.r, c: mv.c }, score });
         });
       }
     }
   }
 
   if (allAiMoves.length > 0) {
-    allAiMoves.sort((a, b) => b.score - a.score);
-    const bestMove = allAiMoves[0];
+    let chosenMove;
 
-    makeMove(bestMove.from.r, bestMove.from.c, bestMove.to.r, bestMove.to.c);
+    if (diff === 'easy') {
+      // 1단계 (하 - 초보자): 60% 확률로 무작위 이동을 선택하여 실수 유발
+      if (Math.random() < 0.6) {
+        chosenMove = allAiMoves[Math.floor(Math.random() * allAiMoves.length)];
+      } else {
+        allAiMoves.sort((a, b) => b.score - a.score);
+        chosenMove = allAiMoves[0];
+      }
+    } else if (diff === 'medium') {
+      // 2단계 (중 - 중급자): 20% 확률 실수, 80% 최적 이동
+      if (Math.random() < 0.2) {
+        chosenMove = allAiMoves[Math.floor(Math.random() * allAiMoves.length)];
+      } else {
+        allAiMoves.sort((a, b) => b.score - a.score);
+        chosenMove = allAiMoves[0];
+      }
+    } else {
+      // 3단계 (상 - 상급자): 100% 최고의 수만 선택
+      allAiMoves.sort((a, b) => b.score - a.score);
+      chosenMove = allAiMoves[0];
+    }
+
+    makeMove(chosenMove.from.r, chosenMove.from.c, chosenMove.to.r, chosenMove.to.c);
   } else {
     logChess(`🤖 컴퓨터 AI가 이동할 기물이 없어 턴을 넘깁니다.`);
     gameState.isPlayerTurn = true;
@@ -495,7 +552,7 @@ function handleGameOver(isPlayerWin) {
     soundManager.playVictory();
     document.getElementById('resultTitle').textContent = `🏆 체크메이트! (대승리) 🏆`;
     document.getElementById('resultTitle').style.color = `#f59e0b`;
-    document.getElementById('resultDesc').textContent = `축하합니다! 적 킹(군주)을 격파하고 천하 삼국의 8x8 체스판에서 완승했습니다!`;
+    document.getElementById('resultDesc').textContent = `축하합니다! ${gameState.currentCampaign.title} 전락에서 적 킹(군주)을 격파하고 체크메이트 완승을 거두었습니다!`;
   } else {
     soundManager.playDefeat();
     document.getElementById('resultTitle').textContent = `💥 체크메이트 (패배) 💥`;
@@ -503,6 +560,10 @@ function handleGameOver(isPlayerWin) {
     document.getElementById('resultDesc').textContent = `아군 킹(군주)이 체크메이트 당했습니다. 전술을 재정비하십시오!`;
   }
   document.getElementById('modalResult').classList.add('active');
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.remove('active');
 }
 
 function logChess(msg) {

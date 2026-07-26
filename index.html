@@ -152,7 +152,7 @@
       </div>
 
       <div id="userRecipeGridList" class="recipe-grid">
-        <!-- JS 동적 생성 -->
+        <!-- JS 동적 생성 (수정/삭제 버튼 포함) -->
       </div>
     </main>
 
@@ -212,13 +212,15 @@
     </div>
   </div>
 
-  <!-- ➕ 6. 나만의 레시피 등록 모달 -->
+  <!-- ➕ 6. 나만의 레시피 등록 / 수정 모달 -->
   <div id="modalAddRecipe" class="modal-overlay">
     <div class="modal-container" style="max-width: 650px;">
       <button class="modal-close-btn" onclick="closeModal('modalAddRecipe')">✕</button>
-      <h2 style="font-size: 1.8rem; font-weight: 900; color: var(--chef-blue-dark); margin-bottom: 16px;">📕 나만의 레시피 올리기</h2>
+      <h2 id="recipeModalTitle" style="font-size: 1.8rem; font-weight: 900; color: var(--chef-blue-dark); margin-bottom: 16px;">📕 나만의 레시피 올리기</h2>
 
       <form id="addRecipeForm" onsubmit="handleSaveUserRecipe(event)">
+        <input type="hidden" id="recipeEditingId" value="">
+
         <div class="form-input-group">
           <label>요리 이름</label>
           <input type="text" id="recipeInputName" placeholder="예: 엄마표 참치 마요 비빔밥" required>
@@ -267,14 +269,14 @@
           <textarea id="recipeInputSteps" rows="4" placeholder="1. 밥 위에 참치를 올립니다.&#10;2. 마요네즈를 지그재그로 뿌립니다." required></textarea>
         </div>
 
-        <button type="submit" class="quick-action-btn" style="width: 100%; justify-content: center; margin-top: 12px;">
-          🚀 레시피 공유 등록하기
+        <button type="submit" id="btnSubmitRecipe" class="quick-action-btn" style="width: 100%; justify-content: center; margin-top: 12px;">
+          🚀 레시피 저장하기
         </button>
       </form>
     </div>
   </div>
 
-  <!-- 📅 7. 날짜별 요리 다이어리 등록 모달 -->
+  <!-- 📅 7. 날짜별 요리 다이어리 등록 / 수정 모달 -->
   <div id="modalAddDiary" class="modal-overlay">
     <div class="modal-container" style="max-width: 550px;">
       <button class="modal-close-btn" onclick="closeModal('modalAddDiary')">✕</button>
@@ -314,9 +316,14 @@
           <textarea id="diaryInputMemo" rows="3" placeholder="예: 마늘 향이 은은하게 배어 나와 빵에 찍어 먹으니 최고였다!" required></textarea>
         </div>
 
-        <button type="submit" class="quick-action-btn" style="width: 100%; justify-content: center; margin-top: 12px;">
-          💾 달력에 요리 기록하기
-        </button>
+        <div style="display: flex; gap: 12px; margin-top: 12px;">
+          <button type="submit" class="quick-action-btn" style="flex: 1; justify-content: center;">
+            💾 다이어리 저장하기
+          </button>
+          <button type="button" id="btnDeleteDiary" onclick="handleDeleteChefDiary()" class="nav-btn" style="background: #ef4444; color: #fff; border: none; display: none;">
+            🗑️ 기록 삭제
+          </button>
+        </div>
       </form>
     </div>
   </div>

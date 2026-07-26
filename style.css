@@ -260,9 +260,7 @@ body {
 .faction-badge.shu { background: var(--shu-color); }
 .faction-badge.wu { background: var(--wu-color); }
 
-/* ------------------------------------------------------------- */
-/* 🖼️ 2. 무장 얼굴 일러스트 이미지 & HP 체력 바 스타일 */
-/* ------------------------------------------------------------- */
+/* 무장 Roster */
 .hero-roster {
   display: flex;
   flex-direction: column;
@@ -448,8 +446,8 @@ body {
   background: linear-gradient(145deg, #1e293b, #0f172a);
   border: 2px solid var(--gold-primary);
   border-radius: 16px;
-  width: 90%;
-  max-width: 920px;
+  width: 92%;
+  max-width: 980px;
   max-height: 90vh;
   overflow-y: auto;
   padding: 30px;
@@ -466,7 +464,164 @@ body {
 }
 
 /* ------------------------------------------------------------- */
-/* 🪖 3. 직관적 출전 장수 선택 모달 갤러리 카드 */
+/* 📜 3. 직관적인 인재 등용 창 (Hero Shop Gallery Cards) */
+/* ------------------------------------------------------------- */
+.shop-filter-bar {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.filter-btn {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #cbd5e1;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover, .filter-btn.active {
+  background: var(--gold-primary);
+  color: #000;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+}
+
+.hero-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.hero-shop-card {
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  border: 2px solid #475569;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+
+.hero-shop-card:hover {
+  transform: translateY(-8px);
+}
+
+.hero-shop-card.rank-S { 
+  border-color: #f59e0b; 
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.4); 
+  background: linear-gradient(145deg, #2b3952, #162035);
+}
+.hero-shop-card.rank-A { border-color: #94a3b8; }
+.hero-shop-card.rank-B { border-color: #b45309; }
+.hero-shop-card.rank-C { border-color: #475569; }
+
+.shop-portrait-container {
+  width: 100%;
+  height: 140px;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 12px;
+  border: 2px solid var(--gold-primary);
+  background: #0f172a;
+}
+
+.shop-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.hero-shop-card:hover .shop-portrait-img {
+  transform: scale(1.08);
+}
+
+.shop-rank-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 900;
+  font-size: 0.8rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+
+.shop-rank-badge.S { background: #f59e0b; color: #000; }
+.shop-rank-badge.A { background: #e2e8f0; color: #000; }
+.shop-rank-badge.B { background: #b45309; color: #fff; }
+.shop-rank-badge.C { background: #475569; color: #fff; }
+
+.shop-hero-name {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.shop-hero-title {
+  font-size: 0.8rem;
+  color: var(--gold-light);
+  margin-bottom: 10px;
+}
+
+.shop-stat-bar-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.shop-stat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.shop-stat-value {
+  font-weight: 900;
+  color: var(--gold-light);
+}
+
+.buy-hero-btn {
+  margin-top: auto;
+  background: linear-gradient(135deg, #b45309, #d97706);
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.buy-hero-btn:disabled {
+  background: #475569;
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------- */
+/* 🪖 4. 직관적 출전 장수 선택 모달 갤러리 카드 */
 /* ------------------------------------------------------------- */
 .hero-select-grid {
   display: grid;
@@ -497,8 +652,8 @@ body {
 }
 
 .hero-select-card .portrait-large {
-  width: 100px;
-  height: 100px;
+  width: 110px;
+  height: 110px;
   border-radius: 12px;
   object-fit: cover;
   border: 3px solid var(--gold-primary);
@@ -585,8 +740,8 @@ body {
 }
 
 .fighter-portrait-lg {
-  width: 90px;
-  height: 90px;
+  width: 100px;
+  height: 100px;
   border-radius: 12px;
   object-fit: cover;
   border: 4px solid var(--gold-primary);

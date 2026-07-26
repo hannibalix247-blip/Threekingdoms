@@ -1,4 +1,4 @@
-// 삼국지 영웅전 메인 게임 엔진 (통일된 일러스트 이미지 & 직관적 출전 장수 선택 갤러리)
+// 삼국지 영웅전 메인 게임 엔진 (코에이풍 명장 갤러리 카드 & 등급별 필터 등용소)
 import { 
   loginWithGoogle, 
   loginAsGuest, 
@@ -9,6 +9,7 @@ import {
 } from "./firebase-config.js";
 
 let currentUser = null;
+let currentShopFilter = 'all';
 
 let gameState = {
   playerFaction: null,
@@ -31,6 +32,7 @@ window.executeStage3Battle = executeStage3Battle;
 window.closeModal = closeModal;
 window.openLoginModal = openLoginModal;
 window.confirmHeroSelect = confirmHeroSelect;
+window.filterHeroShop = filterHeroShop;
 
 document.addEventListener('DOMContentLoaded', () => {
   initCanvas();
@@ -174,8 +176,8 @@ function selectFaction(factionId) {
 
   let defaultHero;
   if (factionId === 'shu') defaultHero = HEROES.find(h => h.id === 'guan_yu');
-  else if (factionId === 'wei') defaultHero = HEROES.find(h => h.id === 'xiahoudun');
-  else defaultHero = HEROES.find(h => h.id === 'taishici');
+  else if (factionId === 'wei') defaultHero = HEROES.find(h => h.id === 'cao_cao');
+  else defaultHero = HEROES.find(h => h.id === 'zhou_yu');
 
   if (defaultHero) {
     const copyHero = JSON.parse(JSON.stringify(defaultHero));
@@ -223,7 +225,7 @@ function renderHeroRoster() {
     chip.className = `hero-chip rank-${hero.rank}`;
     chip.innerHTML = `
       <div style="display: flex; align-items: center; gap: 10px;">
-        <img class="hero-portrait-img" src="${hero.img}" alt="${hero.name}">
+        <img class="hero-portrait-img" src="${hero.img}" alt="${hero.name}" onerror="this.src='${hero.fallbackImg || 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/400px-Chinese_Officer_Portrait.jpg'}';">
         <div>
           <div><strong style="color: #f8fafc;">${hero.name}</strong> <span class="hero-chip-rank ${hero.rank}">${hero.rank}</span></div>
           <div style="font-size: 0.75rem; color: var(--gold-light);">⚔️${hero.war} | 🧠${hero.int}</div>
@@ -364,7 +366,7 @@ function onCityClick(city) {
 }
 
 // -------------------------------------------------------------
-// 🪖 직관적 출전 장수 선택 갤러리 모달 (Intuitive Hero Selection)
+// 🪖 출전 장수 선택 갤러리 모달
 // -------------------------------------------------------------
 function openHeroSelectModal(targetCity, isDefensive = false) {
   gameState.pendingBattleCity = targetCity;
@@ -381,7 +383,7 @@ function openHeroSelectModal(targetCity, isDefensive = false) {
     const card = document.createElement('div');
     card.className = 'hero-select-card';
     card.innerHTML = `
-      <img class="portrait-large" src="${hero.img}" alt="${hero.name}">
+      <img class="portrait-large" src="${hero.img}" alt="${hero.name}" onerror="this.src='${hero.fallbackImg || 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/400px-Chinese_Officer_Portrait.jpg'}';">
       <div class="hero-select-name">${hero.name}</div>
       <div class="hero-select-title">${hero.title}</div>
       
@@ -413,40 +415,63 @@ function confirmHeroSelect(heroIndex) {
   startBattle(gameState.pendingBattleCity, selectedHero, gameState.pendingIsDefensive);
 }
 
+// -------------------------------------------------------------
+// 📜 인재 등용 창 (코에이 삼국지 갤러리 방식 & 필터링)
+// -------------------------------------------------------------
+function filterHeroShop(rankFilter) {
+  currentShopFilter = rankFilter;
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  event.target.classList.add('active');
+  renderHeroShop();
+}
+
 function openHeroShop() {
   soundManager.playGong();
+  renderHeroShop();
+  document.getElementById('modalHeroShop').classList.add('active');
+}
+
+function renderHeroShop() {
   const grid = document.getElementById('heroShopGrid');
   grid.innerHTML = '';
 
-  HEROES.forEach(hero => {
+  const filteredHeroes = HEROES.filter(h => {
+    if (currentShopFilter === 'all') return true;
+    return h.rank === currentShopFilter;
+  });
+
+  filteredHeroes.forEach(hero => {
     const isRecruited = gameState.recruitingHeroes.some(h => h.id === hero.id);
     const canAfford = gameState.gold >= hero.cost;
 
     const card = document.createElement('div');
-    card.className = `hero-card rank-${hero.rank}`;
+    card.className = `hero-shop-card rank-${hero.rank}`;
     card.innerHTML = `
-      <div class="hero-card-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <img style="width: 36px; height: 36px; border-radius: 6px; object-fit: cover;" src="${hero.img}" alt="${hero.name}">
-          <span class="hero-name">${hero.name}</span>
-        </div>
-        <span class="hero-chip-rank ${hero.rank}">${hero.rank}급</span>
+      <div class="shop-portrait-container">
+        <img class="shop-portrait-img" src="${hero.img}" alt="${hero.name}" onerror="this.src='${hero.fallbackImg || 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/400px-Chinese_Officer_Portrait.jpg'}';">
+        <span class="shop-rank-badge ${hero.rank}">${hero.rank}급</span>
       </div>
-      <div style="font-size: 0.78rem; color: var(--gold-light);">${hero.title}</div>
-      <div class="hero-stats">
-        <div class="stat-item"><span class="stat-label">무력</span><span class="stat-val">${hero.war}</span></div>
-        <div class="stat-item"><span class="stat-label">지력</span><span class="stat-val">${hero.int}</span></div>
-        <div class="stat-item"><span class="stat-label">체력</span><span class="stat-val">${hero.maxHp}</span></div>
+
+      <div class="shop-hero-name">${hero.name}</div>
+      <div class="shop-hero-title">${hero.title}</div>
+
+      <div class="shop-stat-bar-box">
+        <div class="shop-stat-item"><span>⚔️ 무력 수치</span><span class="shop-stat-value">${hero.war}</span></div>
+        <div class="shop-stat-item"><span>🧠 지력 수치</span><span class="shop-stat-value">${hero.int}</span></div>
+        <div class="shop-stat-item"><span>🛡️ 통솔 수치</span><span class="shop-stat-value">${hero.lead}</span></div>
+        <div class="shop-stat-item"><span>❤️ 최대 체력</span><span class="shop-stat-value">${hero.maxHp} HP</span></div>
       </div>
-      <div style="font-size: 0.72rem; color: #94a3b8; font-style: italic; margin-bottom: 10px;">"${hero.quote}"</div>
+
+      <div style="font-size: 0.72rem; color: #94a3b8; font-style: italic; margin-bottom: 12px; height: 32px;">"${hero.quote}"</div>
+
       <button class="buy-hero-btn" ${isRecruited || !canAfford ? 'disabled' : ''} onclick="buyHero('${hero.id}')">
-        ${isRecruited ? '등용 완료' : `🪙 ${hero.cost} 금으로 등용`}
+        ${isRecruited ? '등용 완료' : `🪙 ${hero.cost} 금으로 명장 등용`}
       </button>
     `;
     grid.appendChild(card);
   });
-
-  document.getElementById('modalHeroShop').classList.add('active');
 }
 
 function buyHero(heroId) {
@@ -460,17 +485,17 @@ function buyHero(heroId) {
   soundManager.playVictory();
   updateResourcesUI();
   renderHeroRoster();
-  openHeroShop();
+  renderHeroShop();
 }
 
 function startBattle(targetCity, selectedHero, isDefensive = false) {
   const enemyWar = Math.floor(65 + Math.random() * 25);
   const enemyMaxHp = 100;
   
-  // 적 수성 장수 통일된 일러스트 SVG 생성
   const enemyHero = { 
     name: `${targetCity.name} 수성 장수`, 
-    img: generateHeroPortraitSVG('수성장수', '#dc2626', '🛡️', ['#450a0a', '#991b1b']), 
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/400px-Chinese_Officer_Portrait.jpg',
+    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/400px-Chinese_Officer_Portrait.jpg', 
     war: enemyWar, 
     int: Math.floor(50 + Math.random() * 30), 
     lead: Math.floor(60 + Math.random() * 30),

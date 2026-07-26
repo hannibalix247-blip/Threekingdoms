@@ -1,4 +1,4 @@
-// 삼국지 영웅전 : 1:1 전술 카드 체스 듀얼 메인 엔진
+// 삼국지 영웅전 : 8x8 정통 체스 엔진 (Three Kingdoms 8x8 Chess Engine)
 import { 
   loginWithGoogle, 
   loginAsGuest, 
@@ -10,49 +10,33 @@ import {
 
 let currentUser = null;
 
-// 게임 듀얼 상태
 let gameState = {
-  currentStage: AI_STAGES[0],
-  playerHp: 100,
-  playerMaxHp: 100,
-  enemyHp: 100,
-  enemyMaxHp: 100,
-  playerSp: 3,
-  maxSp: 10,
-  turnCount: 1,
+  playerFactionId: 'shu',
+  aiFactionId: 'wei',
+  
+  // 8x8 체스판 (null 또는 Piece 객체)
+  board: Array(8).fill(null).map(() => Array(8).fill(null)),
+  
+  selectedPos: null,
+  validMoves: [],
+  validAttacks: [],
+  
   isPlayerTurn: true,
-  
-  // 5x5 체스 그리드 보드 상태 (null 또는 Unit 객체)
-  grid: Array(5).fill(null).map(() => Array(5).fill(null)),
-  
-  // 내 손패 카드 5장
-  playerHand: [],
-  
-  // 현재 선택된 항목 ('card' 또는 'unit')
-  selectedType: null,
-  selectedCard: null,
-  selectedUnitPos: null,
-  
-  movableCells: [],
-  attackableCells: []
+  isCheck: false,
+  isGameOver: false,
+
+  playerCaptured: [],
+  aiCaptured: []
 };
 
-window.closeModal = closeModal;
-window.selectStage = selectStage;
+window.selectFaction = selectFaction;
+window.restartGame = restartGame;
 
 document.addEventListener('DOMContentLoaded', () => {
-  initGame();
+  document.getElementById('btnRestart').addEventListener('click', () => {
+    document.getElementById('titleScreen').classList.remove('hidden');
+  });
 
-  const btnStart = document.getElementById('btnStartGameTitle');
-  if (btnStart) {
-    btnStart.addEventListener('click', () => {
-      soundManager.playDrum();
-      document.getElementById('titleScreen').classList.add('hidden');
-    });
-  }
-
-  document.getElementById('btnEndTurn').addEventListener('click', endPlayerTurn);
-  document.getElementById('btnSelectStage').addEventListener('click', openStageSelectModal);
   document.getElementById('btnSaveGame').addEventListener('click', handleSaveGame);
   document.getElementById('btnLoadGame').addEventListener('click', handleLoadGame);
 
@@ -69,11 +53,12 @@ async function handleGuestLogin() {
 
 async function handleSaveGame() {
   const saveData = {
-    currentStageId: gameState.currentStage.id,
-    playerHp: gameState.playerHp,
-    enemyHp: gameState.enemyHp,
-    playerSp: gameState.playerSp,
-    turnCount: gameState.turnCount
+    playerFactionId: gameState.playerFactionId,
+    aiFactionId: gameState.aiFactionId,
+    board: gameState.board,
+    playerCaptured: gameState.playerCaptured,
+    aiCaptured: gameState.aiCaptured,
+    isPlayerTurn: gameState.isPlayerTurn
   };
 
   const userId = currentUser ? currentUser.uid : 'guest';
@@ -81,7 +66,7 @@ async function handleSaveGame() {
 
   if (result.success) {
     soundManager.playVictory();
-    alert("💾 1:1 체스 대결 진행 상황이 성공적으로 저장되었습니다!");
+    alert("💾 8x8 삼국지 체스 대결 상황이 성공적으로 저장되었습니다!");
   }
 }
 
@@ -94,496 +79,368 @@ async function handleLoadGame() {
     return;
   }
 
-  const stage = AI_STAGES.find(s => s.id === data.currentStageId) || AI_STAGES[0];
-  selectStage(stage.id);
+  gameState.playerFactionId = data.playerFactionId || 'shu';
+  gameState.aiFactionId = data.aiFactionId || 'wei';
+  gameState.board = data.board;
+  gameState.playerCaptured = data.playerCaptured || [];
+  gameState.aiCaptured = data.aiCaptured || [];
+  gameState.isPlayerTurn = data.isPlayerTurn !== undefined ? data.isPlayerTurn : true;
 
-  gameState.playerHp = data.playerHp || 100;
-  gameState.enemyHp = data.enemyHp || 100;
-  gameState.playerSp = data.playerSp || 3;
-  gameState.turnCount = data.turnCount || 1;
+  document.getElementById('titleScreen').classList.add('hidden');
+  updateFactionInfo();
+  renderBoard();
+  updateCapturedUI();
 
-  updateUI();
   soundManager.playVictory();
-  alert("📂 저장된 체스 대결 데이터를 불러왔습니다!");
+  alert("📂 저장된 8x8 체스 게임을 불러왔습니다!");
 }
 
-function initGame() {
-  gameState.grid = Array(5).fill(null).map(() => Array(5).fill(null));
-  gameState.playerHp = 100;
-  gameState.enemyHp = gameState.currentStage.bossHp;
-  gameState.enemyMaxHp = gameState.currentStage.bossMaxHp;
-  gameState.playerSp = 3;
-  gameState.turnCount = 1;
+function selectFaction(factionId) {
+  gameState.playerFactionId = factionId;
+  
+  if (factionId === 'shu') gameState.aiFactionId = 'wei';
+  else if (factionId === 'wei') gameState.aiFactionId = 'wu';
+  else gameState.aiFactionId = 'shu';
+
+  document.getElementById('titleScreen').classList.add('hidden');
+  soundManager.playDrum();
+  initBoard();
+}
+
+function restartGame() {
+  document.getElementById('modalResult').classList.remove('active');
+  document.getElementById('titleScreen').classList.remove('hidden');
+}
+
+function updateFactionInfo() {
+  const pFact = CHESS_FACTIONS[gameState.playerFactionId];
+  const aFact = CHESS_FACTIONS[gameState.aiFactionId];
+
+  document.getElementById('playerFactionName').textContent = `아군 (${pFact.name})`;
+  document.getElementById('playerKingName').textContent = `킹: ${pFact.pieces.king.name.split(' ')[0]} | 퀸: ${pFact.pieces.queen.name.split(' ')[0]}`;
+  document.getElementById('playerFactionIcon').textContent = gameState.playerFactionId === 'shu' ? '🍃' : (gameState.playerFactionId === 'wei' ? '🐉' : '🔥');
+
+  document.getElementById('aiFactionName').textContent = `컴퓨터 AI (${aFact.name})`;
+  document.getElementById('aiKingName').textContent = `킹: ${aFact.pieces.king.name.split(' ')[0]} | 퀸: ${aFact.pieces.queen.name.split(' ')[0]}`;
+  document.getElementById('aiFactionIcon').textContent = gameState.aiFactionId === 'shu' ? '🍃' : (gameState.aiFactionId === 'wei' ? '🐉' : '🔥');
+}
+
+// -------------------------------------------------------------
+// ♟️ 8x8 체스판 초기화 (Standard Chess Board Setup)
+// -------------------------------------------------------------
+function initBoard() {
+  gameState.board = Array(8).fill(null).map(() => Array(8).fill(null));
+  gameState.playerCaptured = [];
+  gameState.aiCaptured = [];
+  gameState.selectedPos = null;
+  gameState.validMoves = [];
+  gameState.validAttacks = [];
   gameState.isPlayerTurn = true;
+  gameState.isGameOver = false;
 
-  // 초기 아군 패 4장 생성
-  gameState.playerHand = [
-    JSON.parse(JSON.stringify(HERO_CARDS.find(h => h.id === 'guan_yu'))),
-    JSON.parse(JSON.stringify(HERO_CARDS.find(h => h.id === 'zhao_yun'))),
-    JSON.parse(JSON.stringify(HERO_CARDS.find(h => h.id === 'huang_zhong'))),
-    JSON.parse(JSON.stringify(TACTICAL_SPELL_CARDS.find(c => c.id === 'fire_attack')))
-  ];
+  updateFactionInfo();
 
-  // 초기 아군 보병 1명 소환된 상태로 시작
-  const defaultUnit = JSON.parse(JSON.stringify(HERO_CARDS.find(h => h.id === 'cao_ren')));
-  defaultUnit.owner = 'player';
-  defaultUnit.hp = defaultUnit.maxHp;
-  gameState.grid[4][2] = defaultUnit;
+  const pFact = CHESS_FACTIONS[gameState.playerFactionId];
+  const aFact = CHESS_FACTIONS[gameState.aiFactionId];
 
-  // 컴퓨터 AI 기본 유닛 소환
-  const enemyUnit = JSON.parse(JSON.stringify(HERO_CARDS.find(h => h.id === 'xiahoudun')));
-  enemyUnit.owner = 'enemy';
-  enemyUnit.hp = enemyUnit.maxHp;
-  gameState.grid[0][2] = enemyUnit;
+  // AI 기물 배치 (행 0: 룩, 나이트, 비숍, 퀸, 킹, 비숍, 나이트, 룩 / 행 1: 폰 8개)
+  const mainOrder = ['rook1', 'knight1', 'bishop1', 'queen', 'king', 'bishop2', 'knight2', 'rook2'];
+  for (let c = 0; c < 8; c++) {
+    const key = mainOrder[c];
+    gameState.board[0][c] = { ...aFact.pieces[key], pieceType: key.replace(/[0-9]/g, ''), owner: 'ai' };
+    gameState.board[1][c] = { ...aFact.pieces.pawn, pieceType: 'pawn', owner: 'ai' };
+  }
 
-  renderGrid();
-  renderHand();
-  updateUI();
-  logDuel(`[대결 시작] ${gameState.currentStage.name} 대결이 시작되었습니다!`);
+  // 플레이어 기물 배치 (행 7: 룩, 나이트, 비숍, 퀸, 킹, 비숍, 나이트, 룩 / 행 6: 폰 8개)
+  for (let c = 0; c < 8; c++) {
+    const key = mainOrder[c];
+    gameState.board[7][c] = { ...pFact.pieces[key], pieceType: key.replace(/[0-9]/g, ''), owner: 'player' };
+    gameState.board[6][c] = { ...pFact.pieces.pawn, pieceType: 'pawn', owner: 'player' };
+  }
+
+  renderBoard();
+  updateCapturedUI();
+  logChess(`♟️ 8x8 삼국지 체스가 시작되었습니다! [${pFact.name}] VS [${aFact.name}]`);
 }
 
-function openStageSelectModal() {
-  const container = document.getElementById('stageCardGrid');
-  container.innerHTML = '';
+function renderBoard() {
+  const boardEl = document.getElementById('chessBoard8x8');
+  boardEl.innerHTML = '';
 
-  AI_STAGES.forEach(stage => {
-    const card = document.createElement('div');
-    card.style.cssText = `
-      background: linear-gradient(145deg, #1e293b, #0f172a);
-      border: 2px solid ${stage.color};
-      border-radius: 12px;
-      padding: 16px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      transition: transform 0.2s ease;
-    `;
-    card.innerHTML = `
-      <div style="font-size: 2.5rem;">${stage.icon}</div>
-      <div style="font-size: 1.2rem; font-weight: 900; color: #fff;">${stage.name}</div>
-      <div style="font-size: 0.85rem; color: var(--gold-light);">보스 체력: ${stage.bossHp} HP</div>
-      <div style="font-size: 0.78rem; color: #cbd5e1; text-align: center;">${stage.desc}</div>
-      <button class="header-btn" style="margin-top: 8px; width: 100%; background: ${stage.color};">⚔️ 도전하기</button>
-    `;
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const square = document.createElement('div');
+      const isLight = (r + c) % 2 === 0;
+      square.className = `chess-square ${isLight ? 'square-light' : 'square-dark'}`;
 
-    card.onclick = () => selectStage(stage.id);
-    container.appendChild(card);
-  });
+      if (gameState.selectedPos && gameState.selectedPos.r === r && gameState.selectedPos.c === c) {
+        square.classList.add('square-selected');
+      }
 
-  document.getElementById('modalStageSelect').classList.add('active');
-}
+      const isMovable = gameState.validMoves.some(m => m.r === r && m.c === c);
+      const isAttackable = gameState.validAttacks.some(a => a.r === r && a.c === c);
 
-function selectStage(stageId) {
-  const stage = AI_STAGES.find(s => s.id === stageId);
-  if (!stage) return;
+      if (isMovable) square.classList.add('square-movable');
+      if (isAttackable) square.classList.add('square-attackable');
 
-  gameState.currentStage = stage;
-  closeModal('modalStageSelect');
-  initGame();
-}
-
-function updateUI() {
-  document.getElementById('enemyLeaderName').textContent = `${gameState.currentStage.bossName}`;
-  document.getElementById('enemyStageBadge').textContent = `${gameState.currentStage.name.split(':')[0]}`;
-
-  const enemyHpPercent = Math.max(0, Math.round((gameState.enemyHp / gameState.enemyMaxHp) * 100));
-  const playerHpPercent = Math.max(0, Math.round((gameState.playerHp / gameState.playerMaxHp) * 100));
-
-  document.getElementById('enemyLeaderHpFill').style.width = `${enemyHpPercent}%`;
-  document.getElementById('enemyLeaderHpText').textContent = `HP ${gameState.enemyHp} / ${gameState.enemyMaxHp}`;
-
-  document.getElementById('playerLeaderHpFill').style.width = `${playerHpPercent}%`;
-  document.getElementById('playerLeaderHpText').textContent = `HP ${gameState.playerHp} / ${gameState.playerMaxHp}`;
-
-  document.getElementById('currentSpText').textContent = gameState.playerSp;
-}
-
-// -------------------------------------------------------------
-// ♟️ 5x5 그리드 렌더링 및 클릭 상호작용
-// -------------------------------------------------------------
-function renderGrid() {
-  const gridEl = document.getElementById('tacticsGrid');
-  gridEl.innerHTML = '';
-
-  for (let r = 0; r < 5; r++) {
-    for (let c = 0; c < 5; c++) {
-      const cell = document.createElement('div');
-      cell.className = 'grid-cell';
-
-      const isMovable = gameState.movableCells.some(m => m.r === r && m.c === c);
-      const isAttackable = gameState.attackableCells.some(a => a.r === r && a.c === c);
-
-      if (isMovable) cell.classList.add('cell-movable');
-      if (isAttackable) cell.classList.add('cell-attackable');
-
-      const unit = gameState.grid[r][c];
-      if (unit) {
-        const unitEl = document.createElement('div');
-        unitEl.className = `grid-unit ${unit.owner === 'player' ? 'player-unit' : 'enemy-unit'}`;
-        
-        if (gameState.selectedUnitPos && gameState.selectedUnitPos.r === r && gameState.selectedUnitPos.c === c) {
-          unitEl.classList.add('selected');
+      const piece = gameState.board[r][c];
+      if (piece) {
+        if (piece.pieceType === 'king' && gameState.isCheck && ((piece.owner === 'player' && gameState.isPlayerTurn) || (piece.owner === 'ai' && !gameState.isPlayerTurn))) {
+          square.classList.add('square-check');
         }
 
-        const hpPercent = Math.max(0, Math.round((unit.hp / unit.maxHp) * 100));
-
-        unitEl.innerHTML = `
-          <img class="unit-img" src="${unit.img}" alt="${unit.name}">
-          <div class="unit-hp-bar"><div class="unit-hp-fill" style="width: ${hpPercent}%;"></div></div>
-          <div class="unit-atk-badge">⚔️${unit.atk}</div>
+        const card = document.createElement('div');
+        card.className = `chess-piece-card ${piece.owner === 'player' ? 'player-piece' : 'ai-piece'}`;
+        card.innerHTML = `
+          <span class="piece-symbol-badge">${piece.symbol}</span>
+          <img class="piece-img" src="${piece.img}" alt="${piece.name}">
+          <span class="piece-name-text">${piece.name.split(' ')[0]}</span>
         `;
-        cell.appendChild(unitEl);
+        square.appendChild(card);
       }
 
-      cell.addEventListener('click', () => onCellClick(r, c));
-      gridEl.appendChild(cell);
+      square.addEventListener('click', () => onSquareClick(r, c));
+      boardEl.appendChild(square);
     }
   }
 }
 
-function onCellClick(r, c) {
-  if (!gameState.isPlayerTurn) return;
+function onSquareClick(r, c) {
+  if (gameState.isGameOver || !gameState.isPlayerTurn) return;
 
-  const targetUnit = gameState.grid[r][c];
+  const clickedPiece = gameState.board[r][c];
 
-  // 1. 손패 카드가 선택되어 있는 경우 (소환 또는 주문)
-  if (gameState.selectedType === 'card' && gameState.selectedCard) {
-    const card = gameState.selectedCard;
+  // 1. 이미 선택된 내 기물이 있고, 이동 또는 공격 셀을 클릭한 경우
+  if (gameState.selectedPos) {
+    const isMovable = gameState.validMoves.some(m => m.r === r && m.c === c);
+    const isAttackable = gameState.validAttacks.some(a => a.r === r && a.c === c);
 
-    if (card.type === 'spell') {
-      // 전술 주문 사용
-      executeSpell(card, r, c);
-      return;
-    }
-
-    // 무장 소환: 아군 진영 (행 3 또는 4의 빈 공간)
-    if ((r === 3 || r === 4) && !targetUnit) {
-      if (gameState.playerSp < card.cost) {
-        logDuel(`군량(SP)이 부족합니다! (필요: ${card.cost})`);
-        return;
-      }
-
-      gameState.playerSp -= card.cost;
-      const newUnit = JSON.parse(JSON.stringify(card));
-      newUnit.owner = 'player';
-      newUnit.hp = newUnit.maxHp;
-
-      gameState.grid[r][c] = newUnit;
-
-      // 손패에서 제거
-      gameState.playerHand = gameState.playerHand.filter(h => h !== card);
-      clearSelection();
-
-      soundManager.playGong();
-      logDuel(`♟️ [소환] ${newUnit.name} 무장이 전장 (${r + 1}행 ${c + 1}열)에 소환되었습니다!`);
-      renderGrid();
-      renderHand();
-      updateUI();
+    if (isMovable || isAttackable) {
+      makeMove(gameState.selectedPos.r, gameState.selectedPos.c, r, c);
       return;
     }
   }
 
-  // 2. 이미 배치된 아군 유닛을 선택한 경우
-  if (targetUnit && targetUnit.owner === 'player') {
-    gameState.selectedType = 'unit';
-    gameState.selectedCard = null;
-    gameState.selectedUnitPos = { r, c };
-
-    calculateUnitActions(r, c, targetUnit);
-    renderGrid();
-    renderHand();
-    return;
-  }
-
-  // 3. 체스 이동 실행
-  const isMovable = gameState.movableCells.some(m => m.r === r && m.c === c);
-  if (isMovable && gameState.selectedUnitPos) {
-    const { r: sr, c: sc } = gameState.selectedUnitPos;
-    const unit = gameState.grid[sr][sc];
-
-    gameState.grid[r][c] = unit;
-    gameState.grid[sr][sc] = null;
-
-    soundManager.playDrum();
-    logDuel(`🐎 [이동] ${unit.name} 무장이 (${r + 1}행 ${c + 1}열) 위치로 기동했습니다.`);
-
-    clearSelection();
-    renderGrid();
-    renderHand();
-    return;
-  }
-
-  // 4. 공격 실행
-  const isAttackable = gameState.attackableCells.some(a => a.r === r && a.c === c);
-  if (isAttackable && gameState.selectedUnitPos) {
-    const { r: sr, c: sc } = gameState.selectedUnitPos;
-    const attacker = gameState.grid[sr][sc];
-
-    if (targetUnit && targetUnit.owner === 'enemy') {
-      soundManager.playSwordClash();
-      targetUnit.hp -= attacker.atk;
-      logDuel(`💥 [공격] ${attacker.name} -> 적 ${targetUnit.name}에게 ${attacker.atk} 데미지!`);
-
-      if (targetUnit.hp <= 0) {
-        logDuel(`☠️ [파괴] 적 ${targetUnit.name} 부대가 파괴되었습니다!`);
-        gameState.grid[r][c] = null;
-      }
-    } else if (r === 0) {
-      // 적 군주 본체 타격
-      soundManager.playSwordClash();
-      gameState.enemyHp = Math.max(0, gameState.enemyHp - attacker.atk);
-      logDuel(`⚡ [본체 타격!] ${attacker.name} 장수가 적 군주 본체에 ${attacker.atk} 데미지를 입혔습니다!`);
-
-      if (gameState.enemyHp <= 0) {
-        handleVictory();
-        return;
-      }
-    }
-
-    clearSelection();
-    renderGrid();
-    renderHand();
-    updateUI();
-    return;
-  }
-
-  clearSelection();
-  renderGrid();
-  renderHand();
-}
-
-function calculateUnitActions(r, c, unit) {
-  gameState.movableCells = [];
-  gameState.attackableCells = [];
-
-  const range = unit.moveRange || 1;
-
-  // 이동 가능 셀 (상하좌우 4방향)
-  const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-  dirs.forEach(([dr, dc]) => {
-    for (let step = 1; step <= range; step++) {
-      const nr = r + dr * step;
-      const nc = c + dc * step;
-
-      if (nr >= 0 && nr < 5 && nc >= 0 && nc < 5) {
-        if (!gameState.grid[nr][nc]) {
-          gameState.movableCells.push({ r: nr, c: nc });
-        } else {
-          break; // 다른 유닛에 막힘
-        }
-      }
-    }
-  });
-
-  // 공격 가능 셀 (적 유닛 위치 또는 행 0 적 HQ)
-  dirs.forEach(([dr, dc]) => {
-    const nr = r + dr * unit.attackRange;
-    const nc = c + dc * unit.attackRange;
-
-    if (nr >= 0 && nr < 5 && nc >= 0 && nc < 5) {
-      const target = gameState.grid[nr][nc];
-      if (target && target.owner === 'enemy') {
-        gameState.attackableCells.push({ r: nr, c: nc });
-      }
-    }
-  });
-
-  // 적 HQ(컴퓨터 본체) 타격 가능 여부 (행 0에 접했을 때)
-  if (r === 0 || (r === 1 && unit.attackRange >= 2)) {
-    gameState.attackableCells.push({ r: 0, c: c });
-  }
-}
-
-function executeSpell(spellCard, r, c) {
-  if (gameState.playerSp < spellCard.cost) {
-    logDuel(`군량(SP)이 부족합니다! (필요: ${spellCard.cost})`);
-    return;
-  }
-
-  const targetUnit = gameState.grid[r][c];
-
-  if (targetUnit && targetUnit.owner === 'enemy') {
-    gameState.playerSp -= spellCard.cost;
-    soundManager.playGong();
-
-    targetUnit.hp -= spellCard.power;
-    logDuel(`🔥 [전술 주문] ${spellCard.name} 발동! 적 ${targetUnit.name}에게 ${spellCard.power} 피해!`);
-
-    if (targetUnit.hp <= 0) {
-      gameState.grid[r][c] = null;
-    }
-
-    gameState.playerHand = gameState.playerHand.filter(h => h !== spellCard);
-    clearSelection();
-    renderGrid();
-    renderHand();
-    updateUI();
-  } else if (r === 0) {
-    gameState.playerSp -= spellCard.cost;
-    soundManager.playGong();
-
-    gameState.enemyHp = Math.max(0, gameState.enemyHp - spellCard.power);
-    logDuel(`🔥 [전술 주문] ${spellCard.name} 발동! 적 군주 본체에 ${spellCard.power} 피해!`);
-
-    if (gameState.enemyHp <= 0) {
-      handleVictory();
-      return;
-    }
-
-    gameState.playerHand = gameState.playerHand.filter(h => h !== spellCard);
-    clearSelection();
-    renderGrid();
-    renderHand();
-    updateUI();
+  // 2. 아군 기물을 클릭하여 선택한 경우
+  if (clickedPiece && clickedPiece.owner === 'player') {
+    gameState.selectedPos = { r, c };
+    calculateValidMoves(r, c, clickedPiece);
+    renderBoard();
   } else {
-    logDuel(`전술 주문은 적 유닛이나 적 본체(행 1)를 타겟으로 지정해야 합니다.`);
+    gameState.selectedPos = null;
+    gameState.validMoves = [];
+    gameState.validAttacks = [];
+    renderBoard();
   }
 }
 
-function clearSelection() {
-  gameState.selectedType = null;
-  gameState.selectedCard = null;
-  gameState.selectedUnitPos = null;
-  gameState.movableCells = [];
-  gameState.attackableCells = [];
+// -------------------------------------------------------------
+// ♟️ 정통 체스 기물 이동 알고리즘 (Chess Rules)
+// -------------------------------------------------------------
+function calculateValidMoves(r, c, piece) {
+  gameState.validMoves = [];
+  gameState.validAttacks = [];
+
+  const type = piece.pieceType;
+  const isPlayer = piece.owner === 'player';
+
+  if (type === 'pawn') {
+    const dir = isPlayer ? -1 : 1;
+    const startRow = isPlayer ? 6 : 1;
+
+    // 1칸 전진
+    if (r + dir >= 0 && r + dir < 8 && !gameState.board[r + dir][c]) {
+      gameState.validMoves.push({ r: r + dir, c });
+
+      // 첫 턴 2칸 전진
+      if (r === startRow && !gameState.board[r + 2 * dir][c]) {
+        gameState.validMoves.push({ r: r + 2 * dir, c });
+      }
+    }
+
+    // 대각선 공격 (상대 기물 잡기)
+    [c - 1, c + 1].forEach(nc => {
+      if (r + dir >= 0 && r + dir < 8 && nc >= 0 && nc < 8) {
+        const target = gameState.board[r + dir][nc];
+        if (target && target.owner !== piece.owner) {
+          gameState.validAttacks.push({ r: r + dir, c: nc });
+        }
+      }
+    });
+  } else if (type === 'knight') {
+    const knightMoves = [
+      [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+      [1, -2], [1, 2], [2, -1], [2, 1]
+    ];
+    knightMoves.forEach(([dr, dc]) => {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+        const target = gameState.board[nr][nc];
+        if (!target) gameState.validMoves.push({ r: nr, c: nc });
+        else if (target.owner !== piece.owner) gameState.validAttacks.push({ r: nr, c: nc });
+      }
+    });
+  } else if (type === 'bishop' || type === 'rook' || type === 'queen') {
+    const dirs = [];
+    if (type === 'bishop' || type === 'queen') dirs.push([-1, -1], [-1, 1], [1, -1], [1, 1]);
+    if (type === 'rook' || type === 'queen') dirs.push([-1, 0], [1, 0], [0, -1], [0, 1]);
+
+    dirs.forEach(([dr, dc]) => {
+      for (let step = 1; step < 8; step++) {
+        const nr = r + dr * step;
+        const nc = c + dc * step;
+        if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+          const target = gameState.board[nr][nc];
+          if (!target) {
+            gameState.validMoves.push({ r: nr, c: nc });
+          } else {
+            if (target.owner !== piece.owner) gameState.validAttacks.push({ r: nr, c: nc });
+            break;
+          }
+        } else break;
+      }
+    });
+  } else if (type === 'king') {
+    const dirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+    dirs.forEach(([dr, dc]) => {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+        const target = gameState.board[nr][nc];
+        if (!target) gameState.validMoves.push({ r: nr, c: nc });
+        else if (target.owner !== piece.owner) gameState.validAttacks.push({ r: nr, c: nc });
+      }
+    });
+  }
+}
+
+function makeMove(fromR, fromC, toR, toC) {
+  const movingPiece = gameState.board[fromR][fromC];
+  const targetPiece = gameState.board[toR][toC];
+
+  if (targetPiece) {
+    soundManager.playSwordClash();
+    if (movingPiece.owner === 'player') gameState.playerCaptured.push(targetPiece);
+    else gameState.aiCaptured.push(targetPiece);
+
+    logDuelAlert(`💥 [기물 잡기] ${movingPiece.name} 이(가) 상대 ${targetPiece.name}을(를) 체스판에서 격파했습니다!`);
+
+    if (targetPiece.pieceType === 'king') {
+      gameState.board[toR][toC] = movingPiece;
+      gameState.board[fromR][fromC] = null;
+      renderBoard();
+      updateCapturedUI();
+      handleGameOver(movingPiece.owner === 'player');
+      return;
+    }
+  } else {
+    soundManager.playDrum();
+  }
+
+  gameState.board[toR][toC] = movingPiece;
+  gameState.board[fromR][fromC] = null;
+
+  gameState.selectedPos = null;
+  gameState.validMoves = [];
+  gameState.validAttacks = [];
+
+  renderBoard();
+  updateCapturedUI();
+
+  if (gameState.isPlayerTurn) {
+    gameState.isPlayerTurn = false;
+    logChess(`--- 아군 턴 완료 -> 컴퓨터 AI 턴 ---`);
+    setTimeout(makeAiChessMove, 1000);
+  } else {
+    gameState.isPlayerTurn = true;
+    logChess(`--- 컴퓨터 AI 턴 완료 -> 아군 턴 ---`);
+  }
 }
 
 // -------------------------------------------------------------
-// 🎴 내 손패 렌더링
+// 🤖 컴퓨터 지능형 체스 AI Engine
 // -------------------------------------------------------------
-function renderHand() {
-  const container = document.getElementById('handCardsList');
-  container.innerHTML = '';
+function makeAiChessMove() {
+  if (gameState.isGameOver) return;
 
-  gameState.playerHand.forEach((card, index) => {
-    const cardEl = document.createElement('div');
-    cardEl.className = 'hand-card';
+  const allAiMoves = [];
 
-    if (gameState.selectedCard === card) {
-      cardEl.classList.add('selected-card');
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const piece = gameState.board[r][c];
+      if (piece && piece.owner === 'ai') {
+        calculateValidMoves(r, c, piece);
+
+        gameState.validAttacks.forEach(att => {
+          const target = gameState.board[att.r][att.c];
+          let score = 10;
+          if (target.pieceType === 'king') score = 1000;
+          else if (target.pieceType === 'queen') score = 90;
+          else if (target.pieceType === 'rook') score = 50;
+          else if (target.pieceType === 'bishop' || target.pieceType === 'knight') score = 30;
+
+          allAiMoves.push({ from: { r, c }, to: { r: att.r, c: att.c }, score });
+        });
+
+        gameState.validMoves.forEach(mv => {
+          allAiMoves.push({ from: { r, c }, to: { r: mv.r, c: mv.c }, score: 1 });
+        });
+      }
     }
+  }
 
-    cardEl.innerHTML = `
-      <div class="hand-card-cost">${card.cost}</div>
-      <img class="hand-card-img" src="${card.img || './assets/guan_yu.svg'}" alt="${card.name}">
-      <div class="hand-card-name">${card.name}</div>
-      <div class="hand-card-desc">${card.desc}</div>
-    `;
+  if (allAiMoves.length > 0) {
+    allAiMoves.sort((a, b) => b.score - a.score);
+    const bestMove = allAiMoves[0];
 
-    cardEl.onclick = () => {
-      if (!gameState.isPlayerTurn) return;
-      gameState.selectedType = 'card';
-      gameState.selectedCard = card;
-      gameState.selectedUnitPos = null;
-      gameState.movableCells = [];
-      gameState.attackableCells = [];
+    makeMove(bestMove.from.r, bestMove.from.c, bestMove.to.r, bestMove.to.c);
+  } else {
+    logChess(`🤖 컴퓨터 AI가 이동할 기물이 없어 턴을 넘깁니다.`);
+    gameState.isPlayerTurn = true;
+  }
+}
 
-      renderGrid();
-      renderHand();
-    };
+function updateCapturedUI() {
+  const pBox = document.getElementById('playerCapturedBox');
+  const aBox = document.getElementById('aiCapturedBox');
 
-    container.appendChild(cardEl);
+  pBox.innerHTML = '';
+  aBox.innerHTML = '';
+
+  gameState.playerCaptured.forEach(p => {
+    const span = document.createElement('span');
+    span.className = 'captured-icon';
+    span.textContent = p.symbol;
+    pBox.appendChild(span);
+  });
+
+  gameState.aiCaptured.forEach(p => {
+    const span = document.createElement('span');
+    span.className = 'captured-icon';
+    span.textContent = p.symbol;
+    aBox.appendChild(span);
   });
 }
 
-// -------------------------------------------------------------
-// ⏭️ 턴 종료 & 컴퓨터 AI 턴 수행
-// -------------------------------------------------------------
-function endPlayerTurn() {
-  if (!gameState.isPlayerTurn) return;
-
-  gameState.isPlayerTurn = false;
-  clearSelection();
-  renderGrid();
-
-  logDuel(`--- 턴 종료 ---`);
-  logDuel(`🤖 컴퓨터 AI (${gameState.currentStage.bossName}) 턴 수행 중...`);
-
-  setTimeout(processAiTurn, 1000);
-}
-
-function processAiTurn() {
-  // 1. AI 전장에 있는 적 유닛들의 전진 & 공격
-  for (let r = 0; r < 5; r++) {
-    for (let c = 0; c < 5; c++) {
-      const unit = gameState.grid[r][c];
-      if (unit && unit.owner === 'enemy') {
-        // 아군 유닛 또는 플레이어 HQ(행 4) 공격 시도
-        if (r === 3 || r === 4) {
-          // 아군 HQ 타격
-          gameState.playerHp = Math.max(0, gameState.playerHp - unit.atk);
-          logDuel(`💥 [적 AI 타격!] ${unit.name} 부대가 아군 본체를 공격하여 ${unit.atk} 피해!`);
-
-          if (gameState.playerHp <= 0) {
-            handleDefeat();
-            return;
-          }
-        } else if (r < 4 && !gameState.grid[r + 1][c]) {
-          // 전진
-          gameState.grid[r + 1][c] = unit;
-          gameState.grid[r][c] = null;
-        }
-      }
-    }
+function handleGameOver(isPlayerWin) {
+  gameState.isGameOver = true;
+  if (isPlayerWin) {
+    soundManager.playVictory();
+    document.getElementById('resultTitle').textContent = `🏆 체크메이트! (대승리) 🏆`;
+    document.getElementById('resultTitle').style.color = `#f59e0b`;
+    document.getElementById('resultDesc').textContent = `축하합니다! 적 킹(군주)을 격파하고 천하 삼국의 8x8 체스판에서 완승했습니다!`;
+  } else {
+    soundManager.playDefeat();
+    document.getElementById('resultTitle').textContent = `💥 체크메이트 (패배) 💥`;
+    document.getElementById('resultTitle').style.color = `#ef4444`;
+    document.getElementById('resultDesc').textContent = `아군 킹(군주)이 체크메이트 당했습니다. 전술을 재정비하십시오!`;
   }
-
-  // 2. AI 새로운 무장 소환 (행 0 또는 행 1의 빈 공간)
-  const availableAiCardIds = gameState.currentStage.deck;
-  const randomCardId = availableAiCardIds[Math.floor(Math.random() * availableAiCardIds.length)];
-
-  const heroCard = HERO_CARDS.find(h => h.id === randomCardId);
-  if (heroCard) {
-    for (let c = 0; c < 5; c++) {
-      if (!gameState.grid[0][c]) {
-        const newEnemy = JSON.parse(JSON.stringify(heroCard));
-        newEnemy.owner = 'enemy';
-        newEnemy.hp = newEnemy.maxHp;
-        gameState.grid[0][c] = newEnemy;
-        logDuel(`🤖 [적 AI 소환] ${newEnemy.name} 장수를 (${c + 1}열)에 소환했습니다.`);
-        break;
-      }
-    }
-  }
-
-  // 3. 턴 복귀 & 자원 획득
-  setTimeout(() => {
-    gameState.turnCount++;
-    gameState.playerSp = Math.min(gameState.maxSp, gameState.playerSp + 2);
-
-    // 내 손패 카드 1장 드로우 (최대 5장)
-    if (gameState.playerHand.length < 5) {
-      const randomHero = HERO_CARDS[Math.floor(Math.random() * HERO_CARDS.length)];
-      gameState.playerHand.push(JSON.parse(JSON.stringify(randomHero)));
-    }
-
-    gameState.isPlayerTurn = true;
-    updateUI();
-    renderGrid();
-    renderHand();
-    logDuel(`--- 턴 ${gameState.turnCount} 시작 (아군 턴) ---`);
-  }, 1000);
-}
-
-function handleVictory() {
-  soundManager.playVictory();
-  document.getElementById('resultTitle').textContent = `🏆 대 승 리 🏆`;
-  document.getElementById('resultTitle').style.color = `#f59e0b`;
-  document.getElementById('resultDesc').textContent = `적 ${gameState.currentStage.bossName}의 HQ를 격파하고 1:1 체스 대결에서 승리했습니다!`;
   document.getElementById('modalResult').classList.add('active');
 }
 
-function handleDefeat() {
-  soundManager.playDefeat();
-  document.getElementById('resultTitle').textContent = `💥 대 패 배 💥`;
-  document.getElementById('resultTitle').style.color = `#ef4444`;
-  document.getElementById('resultDesc').textContent = `아군 HQ가 적에게 함락되었습니다. 전술을 재정비하십시오!`;
-  document.getElementById('modalResult').classList.add('active');
-}
-
-function logDuel(msg) {
-  const box = document.getElementById('duelLogBox');
+function logChess(msg) {
+  const box = document.getElementById('chessLogBox');
   const p = document.createElement('p');
   p.style.marginBottom = '4px';
   p.textContent = msg;
@@ -591,6 +448,6 @@ function logDuel(msg) {
   box.scrollTop = box.scrollHeight;
 }
 
-function closeModal(modalId) {
-  document.getElementById(modalId).classList.remove('active');
+function logDuelAlert(msg) {
+  logChess(msg);
 }

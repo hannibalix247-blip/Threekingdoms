@@ -3,18 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>삼국지 영웅전 : 1:1 전술 카드 체스 듀얼</title>
+  <title>삼국지 영웅전 : 8x8 체스 (Three Kingdoms Chess)</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- 🏰 1. 타이틀 레벨 랜딩 화면 -->
+  <!-- 🏰 1. 세력 선택 & 게임 시작 랜딩 오버레이 -->
   <div id="titleScreen">
     <div style="text-align: center;">
       <h1 class="main-game-title">삼국지 영웅전</h1>
-      <p class="sub-game-title">⚔️ 1:1 전술 카드 체스 듀얼 (Card Tactics Duel) ⚔️</p>
-      <button id="btnStartGameTitle" class="start-btn-large">
-        ♟️ 1:1 체스 전술 대결 시작하기
-      </button>
+      <p class="sub-game-title">⚔️ 8x8 삼국지 체스 (Three Kingdoms Chess) ⚔️</p>
+      
+      <p style="color: var(--gold-light); font-size: 1.1rem; margin-bottom: 20px;">
+        체스판 위에서 천하를 다툴 아군의 세력을 선택하십시오!
+      </p>
+
+      <div class="faction-select-container">
+        <!-- 촉한 선택 -->
+        <div class="faction-choice-card" onclick="selectFaction('shu')">
+          <div style="font-size: 3rem; margin-bottom: 10px;">🍃</div>
+          <div style="font-size: 1.4rem; font-weight: 900; color: #34d399;">촉한 (蜀漢)</div>
+          <div style="font-size: 0.9rem; color: #cbd5e1; margin-top: 6px;">킹: 유비 | 퀸: 제갈량</div>
+          <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 8px;">관우, 장비, 조운 등 무성 장수진</div>
+        </div>
+
+        <!-- 조위 선택 -->
+        <div class="faction-choice-card" onclick="selectFaction('wei')">
+          <div style="font-size: 3rem; margin-bottom: 10px;">🐉</div>
+          <div style="font-size: 1.4rem; font-weight: 900; color: #60a5fa;">조위 (曹魏)</div>
+          <div style="font-size: 0.9rem; color: #cbd5e1; margin-top: 6px;">킹: 조조 | 퀸: 사마의</div>
+          <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 8px;">장료, 하후돈, 서황 등 정예 위나라군</div>
+        </div>
+
+        <!-- 손오 선택 -->
+        <div class="faction-choice-card" onclick="selectFaction('wu')">
+          <div style="font-size: 3rem; margin-bottom: 10px;">🔥</div>
+          <div style="font-size: 1.4rem; font-weight: 900; color: #f87171;">손오 (孫吳)</div>
+          <div style="font-size: 0.9rem; color: #cbd5e1; margin-top: 6px;">킹: 손권 | 퀸: 주유</div>
+          <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 8px;">태사자, 감녕, 육손 등 강동 수군진</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -23,107 +50,67 @@
     <header class="game-header">
       <div class="game-title">
         <span>♟️</span>
-        <span>삼국지 영웅전 : 1:1 전술 카드 체스</span>
+        <span>삼국지 영웅전 : 8x8 전체화면 체스</span>
       </div>
 
       <div style="display: flex; align-items: center; gap: 12px;">
-        <button id="btnSelectStage" class="header-btn" style="background: linear-gradient(135deg, #1d4ed8, #2563eb);">🎯 난이도 선택</button>
+        <button id="btnRestart" class="header-btn" style="background: linear-gradient(135deg, #1d4ed8, #2563eb);">🔄 세력 재선택</button>
         <button id="btnSaveGame" class="header-btn" style="background: linear-gradient(135deg, #059669, #10b981);">💾 저장</button>
         <button id="btnLoadGame" class="header-btn" style="background: linear-gradient(135deg, #475569, #64748b);">📂 불러오기</button>
       </div>
     </header>
 
-    <!-- ♟️ 2. 메인 1:1 체스 전술 레이아웃 -->
-    <div class="duel-main-layout">
-      <!-- 좌측 정보 및 콘솔 바 -->
-      <aside class="duel-sidebar">
-        <!-- 적 군주 패널 -->
-        <div class="leader-status-box">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <strong id="enemyLeaderName" style="color: #f87171; font-size: 1.1rem;">컴퓨터 AI (맹획)</strong>
-            <span id="enemyStageBadge" style="font-size: 0.8rem; background: #b45309; padding: 2px 6px; border-radius: 4px;">1단계</span>
+    <!-- ♟️ 2. 메인 8x8 전체 화면 체스 레이아웃 -->
+    <div class="chess-main-wrapper">
+      <!-- 좌측 사이드바: 플레이어 정보 & 잡힌 기물 -->
+      <aside class="chess-sidebar">
+        <!-- 적 AI 체스 군주 정보 -->
+        <div class="player-info-card" style="border-color: #ef4444;">
+          <div>
+            <strong id="aiFactionName" style="color: #f87171; font-size: 1.1rem;">컴퓨터 AI (조위 🐉)</strong>
+            <div style="font-size: 0.8rem; color: #cbd5e1;" id="aiKingName">킹: 조조 | 퀸: 사마의</div>
           </div>
-          <div class="leader-hp-bar">
-            <div id="enemyLeaderHpFill" class="leader-hp-fill enemy" style="width: 100%;"></div>
-          </div>
-          <div id="enemyLeaderHpText" style="font-size: 0.8rem; text-align: right; color: #cbd5e1;">HP 100 / 100</div>
+          <div style="font-size: 1.8rem;" id="aiFactionIcon">🐉</div>
         </div>
 
-        <!-- 플레이어 군주 패널 -->
-        <div class="leader-status-box" style="margin-top: auto;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <strong id="playerLeaderName" style="color: #60a5fa; font-size: 1.1rem;">아군 군주 (유비)</strong>
-            <span style="font-size: 0.8rem; color: var(--gold-light);">아군 HQ</span>
-          </div>
-          <div class="leader-hp-bar">
-            <div id="playerLeaderHpFill" class="leader-hp-fill player" style="width: 100%;"></div>
-          </div>
-          <div id="playerLeaderHpText" style="font-size: 0.8rem; text-align: right; color: #cbd5e1;">HP 100 / 100</div>
+        <!-- 적 잡은 기물 수집함 -->
+        <div style="font-size: 0.85rem; color: #cbd5e1;">Captured by AI:</div>
+        <div id="aiCapturedBox" class="captured-box"></div>
+
+        <!-- 전투 진행 정보 & 체스 로그 -->
+        <div id="chessLogBox" style="background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px; font-size: 0.82rem; color: #e2e8f0; height: 180px; overflow-y: auto; border: 1px solid rgba(245, 158, 11, 0.3); margin-top: auto;">
+          ♟️ 삼국지 8x8 체스에 오신 것을 환영합니다!
         </div>
 
-        <!-- 전투 진행 로그 -->
-        <div id="duelLogBox" style="background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; font-size: 0.82rem; color: #e2e8f0; height: 160px; overflow-y: auto; border: 1px solid rgba(245, 158, 11, 0.3);">
-          ♟️ 전술 체스 대결에 오신 것을 환영합니다!
+        <!-- 아군 체스 군주 정보 -->
+        <div class="player-info-card" style="border-color: #3b82f6; margin-top: auto;">
+          <div>
+            <strong id="playerFactionName" style="color: #60a5fa; font-size: 1.1rem;">아군 세력 (촉한 🍃)</strong>
+            <div style="font-size: 0.8rem; color: #cbd5e1;" id="playerKingName">킹: 유비 | 퀸: 제갈량</div>
+          </div>
+          <div style="font-size: 1.8rem;" id="playerFactionIcon">🍃</div>
         </div>
+
+        <!-- 아군 잡은 기물 수집함 -->
+        <div style="font-size: 0.85rem; color: #cbd5e1;">Captured by Player:</div>
+        <div id="playerCapturedBox" class="captured-box"></div>
       </aside>
 
-      <!-- 중앙 5x5 전장 체스 그리드 -->
-      <main class="battlefield-container">
-        <div style="font-size: 0.9rem; color: var(--gold-light); margin-bottom: 10px; font-weight: 700;">
-          🏰 적 컴퓨터 HQ (본진)
-        </div>
-
-        <!-- 5x5 그리드 -->
-        <div id="tacticsGrid" class="tactics-grid">
-          <!-- JS로 25개 그리드 셀 생성 -->
-        </div>
-
-        <div style="font-size: 0.9rem; color: var(--gold-light); margin-top: 10px; font-weight: 700;">
-          🛡️ 아군 HQ (본진)
+      <!-- 중앙 8x8 전체 화면 체스판 -->
+      <main class="chess-board-area">
+        <div id="chessBoard8x8" class="chess-board-8x8">
+          <!-- JS로 64개 체스 셀 생성 -->
         </div>
       </main>
     </div>
-
-    <!-- 🎴 3. 하단 내 손패 (Hand Card List) & 턴 종료 버튼 -->
-    <div class="player-hand-section">
-      <!-- 군량 (SP/마나) -->
-      <div class="mana-sp-bar">
-        <span>🌾 군량 SP:</span>
-        <span class="sp-gem" id="currentSpText">3</span>
-        <span style="font-size: 0.85rem; color: #cbd5e1;">/ 10</span>
-      </div>
-
-      <!-- 내 손패 카드들 -->
-      <div id="handCardsList" class="hand-cards-list">
-        <!-- JS 동적 카드리스트 생성 -->
-      </div>
-
-      <!-- 턴 종료 버튼 -->
-      <button id="btnEndTurn" class="header-btn" style="padding: 14px 28px; font-size: 1.1rem; background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);">
-        ⏭️ 턴 종료
-      </button>
-    </div>
   </div>
 
-  <!-- 🎯 4. 난이도 선택 모달 -->
-  <div id="modalStageSelect" class="modal-overlay">
-    <div class="modal-container" style="max-width: 850px;">
-      <button onclick="closeModal('modalStageSelect')" style="position: absolute; top: 15px; right: 20px; background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer;">✕</button>
-      <h2 class="modal-title">🎯 1:1 대결 난이도 선택 🎯</h2>
-      <p style="text-align: center; color: #cbd5e1; margin-bottom: 24px;">컴퓨터 AI 군주의 난이도를 선택하여 1:1 체스 카드 대결을 시작하세요.</p>
-
-      <div id="stageCardGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px;">
-        <!-- JS 동적 생성 -->
-      </div>
-    </div>
-  </div>
-
-  <!-- 🏆 5. 승리 / 패배 결과 모달 -->
+  <!-- 🏆 3. 체크메이트 / 승패 결과 모달 -->
   <div id="modalResult" class="modal-overlay">
-    <div class="modal-container" style="text-align: center; max-width: 550px;">
-      <h2 id="resultTitle" class="modal-title" style="font-size: 2.4rem;">🏆 대 승 리 🏆</h2>
-      <p id="resultDesc" style="font-size: 1.1rem; color: #fef08a; margin: 20px 0;">적 군주를 격파하고 1:1 체스 전술 듀얼에서 승리했습니다!</p>
-      <button class="header-btn" style="padding: 12px 30px; font-size: 1.1rem;" onclick="closeModal('modalResult')">🔄 대결 다시하기</button>
+    <div class="modal-container">
+      <h2 id="resultTitle" class="modal-title">🏆 체크메이트! (승리) 🏆</h2>
+      <p id="resultDesc" style="font-size: 1.15rem; color: #fef08a; margin: 20px 0;">적 킹(군주)을 외통수로 체크메이트하여 삼국 체스 대결에서 승리했습니다!</p>
+      <button class="header-btn" style="padding: 12px 30px; font-size: 1.1rem;" onclick="restartGame()">🔄 새로운 체스 대결하기</button>
     </div>
   </div>
 

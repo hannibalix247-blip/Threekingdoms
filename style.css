@@ -40,7 +40,7 @@ body {
 }
 
 /* ------------------------------------------------------------- */
-/* 🏰 1. 전면 세력 선택 & 랜딩 오버레이 */
+/* 🏰 1. 타이틀 & 세력 선택 오버레이 */
 /* ------------------------------------------------------------- */
 #titleScreen {
   position: fixed;
@@ -202,8 +202,8 @@ body {
 
 .chess-board-8x8 {
   display: grid;
-  grid-template-columns: repeat(8, 76px);
-  grid-template-rows: repeat(8, 76px);
+  grid-template-columns: repeat(8, 78px);
+  grid-template-rows: repeat(8, 78px);
   border: 12px solid #331e0b;
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(245, 158, 11, 0.3);
@@ -212,8 +212,8 @@ body {
 }
 
 .chess-square {
-  width: 76px;
-  height: 76px;
+  width: 78px;
+  height: 78px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -230,7 +230,7 @@ body {
   background: #334155;
 }
 
-/* 이동 / 공격 / 선택 / 체크 하이라이트 */
+/* 하이라이트 */
 .chess-square.square-selected {
   background: rgba(245, 158, 11, 0.6) !important;
   box-shadow: inset 0 0 12px #fef08a;
@@ -265,66 +265,84 @@ body {
   100% { box-shadow: inset 0 0 5px #7f1d1d; }
 }
 
-/* ♟️ 체스 기물 카드 토큰 (Piece Card) */
-.chess-piece-card {
-  width: 68px;
-  height: 68px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
-  border: 2px solid var(--gold-primary);
+/* ------------------------------------------------------------- */
+/* ♟️ 3. 직관적인 3D 체스 기물 형태 토큰 (Chess Piece Shape Token) */
+/* ------------------------------------------------------------- */
+.chess-piece-shape {
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  border: 3px solid var(--gold-primary);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
   padding: 3px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.7);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.8);
   transition: transform 0.2s ease;
   position: relative;
 }
 
-.chess-piece-card.player-piece {
+.chess-piece-shape.player-piece {
   border-color: #3b82f6;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.8);
 }
 
-.chess-piece-card.ai-piece {
+.chess-piece-shape.ai-piece {
   border-color: #ef4444;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
 }
 
-.piece-symbol-badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  background: #b45309;
-  color: #fff;
-  font-size: 0.75rem;
+/* 체스 기물 타입별 상단 뱃지 (♚ KING, ♛ QUEEN, ♜ ROOK, ♞ KNIGHT, ♝ BISHOP, ♟ PAWN) */
+.piece-role-header {
+  width: 100%;
+  font-size: 0.72rem;
   font-weight: 900;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  text-align: center;
+  padding: 1px 0;
+  border-radius: 4px;
+  color: #fff;
+  letter-spacing: 0.5px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #fef08a;
+  gap: 3px;
+}
+
+/* 기물 종류별 구분 배경색 */
+.piece-role-header.king { background: linear-gradient(90deg, #b45309, #f59e0b); color: #000; }
+.piece-role-header.queen { background: linear-gradient(90deg, #6b21a8, #a855f7); color: #fff; }
+.piece-role-header.rook { background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: #fff; }
+.piece-role-header.knight { background: linear-gradient(90deg, #065f46, #10b981); color: #fff; }
+.piece-role-header.bishop { background: linear-gradient(90deg, #991b1b, #ef4444); color: #fff; }
+.piece-role-header.pawn { background: linear-gradient(90deg, #374151, #6b7280); color: #fff; }
+
+.piece-hero-body {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  justify-content: center;
+}
+
+.piece-hero-img {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--gold-primary);
   box-shadow: 0 2px 6px rgba(0,0,0,0.6);
 }
 
-.piece-img {
-  width: 44px;
-  height: 44px;
-  border-radius: 6px;
-  object-fit: cover;
-}
-
-.piece-name-text {
-  font-size: 0.65rem;
+.piece-hero-name {
+  font-size: 0.68rem;
   font-weight: 900;
-  color: #fff;
+  color: #f8fafc;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
+  max-width: 26px;
 }
 
 /* Modals Overlay */

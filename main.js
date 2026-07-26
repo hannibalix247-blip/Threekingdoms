@@ -1,4 +1,4 @@
-// 삼국지 영웅전 : 8x8 정통 체스 엔진 (Three Kingdoms 8x8 Chess Engine)
+// 삼국지 영웅전 : 8x8 정통 체스 엔진 (직관적 체스 기물 형태 토큰 적용)
 import { 
   loginWithGoogle, 
   loginAsGuest, 
@@ -143,18 +143,20 @@ function initBoard() {
   const pFact = CHESS_FACTIONS[gameState.playerFactionId];
   const aFact = CHESS_FACTIONS[gameState.aiFactionId];
 
-  // AI 기물 배치 (행 0: 룩, 나이트, 비숍, 퀸, 킹, 비숍, 나이트, 룩 / 행 1: 폰 8개)
+  // AI 기물 배치
   const mainOrder = ['rook1', 'knight1', 'bishop1', 'queen', 'king', 'bishop2', 'knight2', 'rook2'];
   for (let c = 0; c < 8; c++) {
     const key = mainOrder[c];
-    gameState.board[0][c] = { ...aFact.pieces[key], pieceType: key.replace(/[0-9]/g, ''), owner: 'ai' };
+    const pType = key.replace(/[0-9]/g, '');
+    gameState.board[0][c] = { ...aFact.pieces[key], pieceType: pType, owner: 'ai' };
     gameState.board[1][c] = { ...aFact.pieces.pawn, pieceType: 'pawn', owner: 'ai' };
   }
 
-  // 플레이어 기물 배치 (행 7: 룩, 나이트, 비숍, 퀸, 킹, 비숍, 나이트, 룩 / 행 6: 폰 8개)
+  // 플레이어 기물 배치
   for (let c = 0; c < 8; c++) {
     const key = mainOrder[c];
-    gameState.board[7][c] = { ...pFact.pieces[key], pieceType: key.replace(/[0-9]/g, ''), owner: 'player' };
+    const pType = key.replace(/[0-9]/g, '');
+    gameState.board[7][c] = { ...pFact.pieces[key], pieceType: pType, owner: 'player' };
     gameState.board[6][c] = { ...pFact.pieces.pawn, pieceType: 'pawn', owner: 'player' };
   }
 
@@ -163,9 +165,21 @@ function initBoard() {
   logChess(`♟️ 8x8 삼국지 체스가 시작되었습니다! [${pFact.name}] VS [${aFact.name}]`);
 }
 
+// -------------------------------------------------------------
+// ♟️ 직관적인 체스 기물 렌더링 (Piece Shape Token)
+// -------------------------------------------------------------
 function renderBoard() {
   const boardEl = document.getElementById('chessBoard8x8');
   boardEl.innerHTML = '';
+
+  const roleLabels = {
+    king: 'KING',
+    queen: 'QUEEN',
+    rook: 'ROOK',
+    knight: 'KNIGHT',
+    bishop: 'BISHOP',
+    pawn: 'PAWN'
+  };
 
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
@@ -189,14 +203,22 @@ function renderBoard() {
           square.classList.add('square-check');
         }
 
-        const card = document.createElement('div');
-        card.className = `chess-piece-card ${piece.owner === 'player' ? 'player-piece' : 'ai-piece'}`;
-        card.innerHTML = `
-          <span class="piece-symbol-badge">${piece.symbol}</span>
-          <img class="piece-img" src="${piece.img}" alt="${piece.name}">
-          <span class="piece-name-text">${piece.name.split(' ')[0]}</span>
+        const heroFirstName = piece.name.split(' ')[0];
+        const roleName = roleLabels[piece.pieceType] || 'PIECE';
+
+        const shape = document.createElement('div');
+        shape.className = `chess-piece-shape ${piece.owner === 'player' ? 'player-piece' : 'ai-piece'}`;
+        shape.innerHTML = `
+          <div class="piece-role-header ${piece.pieceType}">
+            <span>${piece.symbol}</span>
+            <span>${roleName}</span>
+          </div>
+          <div class="piece-hero-body">
+            <img class="piece-hero-img" src="${piece.img}" alt="${piece.name}" onerror="this.src='${piece.fallbackImg || './assets/guan_yu.svg'}';">
+            <span class="piece-hero-name">${heroFirstName}</span>
+          </div>
         `;
-        square.appendChild(card);
+        square.appendChild(shape);
       }
 
       square.addEventListener('click', () => onSquareClick(r, c));

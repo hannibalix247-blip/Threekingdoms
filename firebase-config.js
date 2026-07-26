@@ -15,17 +15,16 @@ import {
   getDoc 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Firebase 설정 객체 (사용자의 Firebase 프로젝트 발급 키를 입력하거나 기본 테스트 키 사용)
+// Firebase 사용자 발급 키 적용
 const firebaseConfig = {
-  apiKey: "YOUR_FIREBASE_API_KEY",
-  authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
-  projectId: "YOUR_FIREBASE_PROJECT_ID",
-  storageBucket: "YOUR_FIREBASE_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_FIREBASE_MESSAGING_SENDER_ID",
-  appId: "YOUR_FIREBASE_APP_ID"
+  apiKey: "AIzaSyBUULde54TVUziQh3h63bzI7KNCD0Fp8ZU",
+  authDomain: "threekingdoms-d975c.firebaseapp.com",
+  projectId: "threekingdoms-d975c",
+  storageBucket: "threekingdoms-d975c.firebasestorage.app",
+  messagingSenderId: "980809250198",
+  appId: "1:980809250198:web:218685132a41088bff99b7"
 };
 
-// Initialize Firebase
 let app;
 let auth;
 let db;
@@ -35,7 +34,7 @@ try {
   auth = getAuth(app);
   db = getFirestore(app);
 } catch (e) {
-  console.warn("Firebase 초기화 대기 중: Config 설정을 확인해주세요.", e);
+  console.warn("Firebase 초기화 에러:", e);
 }
 
 const googleProvider = new GoogleAuthProvider();
@@ -43,7 +42,7 @@ const googleProvider = new GoogleAuthProvider();
 // 1. 구글 로그인
 export async function loginWithGoogle() {
   if (!auth) {
-    alert("Firebase Config가 설정되지 않았습니다. firebase-config.js에 본인의 키를 넣어주세요!");
+    alert("Firebase가 연결되지 않았습니다.");
     return null;
   }
   try {
@@ -59,7 +58,6 @@ export async function loginWithGoogle() {
 // 2. 게스트 비로그인 (익명 로그인)
 export async function loginAsGuest() {
   if (!auth) {
-    // Firebase 연결 없이 로컬 세션 게스트 모드 반환
     return { uid: 'guest_' + Date.now(), displayName: '익명 군주 (게스트)', isAnonymous: true };
   }
   try {

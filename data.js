@@ -1,4 +1,4 @@
-// 삼국지 영웅전 게임 데이터 정의 (코에이 삼국지풍 고화질 일러스트 포트레이트 세트)
+// 삼국지 영웅전 게임 데이터 정의 (로컬 Assets 무장 초상화 연동)
 
 const FACTIONS = {
   wei: {
@@ -71,157 +71,133 @@ const ROAD_CONNECTIONS = [
   ['chaisang', 'wujun']
 ];
 
-// 삼국지 코에이풍 고화질 무장 초상화 일러스트 URL 세트
+// 로컬 assets 무장 초상화 세트 (외부 이미지 차단 원천 해결)
 const HEROES = [
   // S급 명장
   { 
     id: 'cao_cao', name: '조조 (曹操)', avatar: '👑', 
-    img: 'https://images.fineartamerica.com/images/hostedimages/1380797171/87889.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Cao_Cao_Portrait.jpg/400px-Cao_Cao_Portrait.jpg',
+    img: './assets/cao_cao.svg',
     rank: 'S', cost: 1000, war: 82, int: 92, lead: 99, maxHp: 120, hp: 120, faction: 'wei', troopType: 'cavalry', title: '위무제 (魏武帝)', quote: '내 차라리 세상 사람을 버릴지언정...' 
   },
   { 
     id: 'lu_bu', name: '여포 (呂布)', avatar: '🐉', 
-    img: 'https://images.fineartamerica.com/images-medium-large-5/general-lu-bu-chinese-school.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Lu_Bu_Portrait.jpg/400px-Lu_Bu_Portrait.jpg',
+    img: './assets/lu_bu.svg',
     rank: 'S', cost: 1000, war: 100, int: 26, lead: 88, maxHp: 120, hp: 120, faction: 'neutral', troopType: 'cavalry', title: '천하무쌍 (天下無雙)', quote: '누가 감히 나 여봉선을 가로막는가!' 
   },
   { 
     id: 'guan_yu', name: '관우 (關羽)', avatar: '🗡️', 
-    img: 'https://images.fineartamerica.com/images-medium-large-5/guan-yu-chinese-school.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Guan_Yu_Portrait.jpg/400px-Guan_Yu_Portrait.jpg',
+    img: './assets/guan_yu.svg',
     rank: 'S', cost: 1000, war: 97, int: 79, lead: 95, maxHp: 115, hp: 115, faction: 'shu', troopType: 'infantry', title: '무성 (武聖)', quote: '내 청룡언월도가 울부짖는다!' 
   },
   { 
     id: 'zhang_fei', name: '장비 (張飛)', avatar: '🦁', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Zhang_Fei_Portrait.jpg/400px-Zhang_Fei_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Zhang_Fei_Portrait.jpg/400px-Zhang_Fei_Portrait.jpg',
+    img: './assets/zhang_fei.svg',
     rank: 'S', cost: 950, war: 98, int: 30, lead: 86, maxHp: 115, hp: 115, faction: 'shu', troopType: 'cavalry', title: '만인적 (萬人敵)', quote: '장판교 아래 장익덕이 있노라!' 
   },
   { 
     id: 'zhuge_liang', name: '제갈량 (諸葛亮)', avatar: '🪶', 
-    img: 'https://images.fineartamerica.com/images-medium-large-5/zhuge-liang-chinese-school.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Zhuge_Liang_Portrait.jpg/400px-Zhuge_Liang_Portrait.jpg',
+    img: './assets/zhuge_liang.svg',
     rank: 'S', cost: 1000, war: 38, int: 100, lead: 98, maxHp: 90, hp: 90, faction: 'shu', troopType: 'archer', title: '와룡 (臥龍)', quote: '동풍을 불러오겠나이다.' 
   },
   { 
     id: 'zhao_yun', name: '조운 (趙雲)', avatar: '⚡', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Zhao_Yun_Portrait.jpg/400px-Zhao_Yun_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Zhao_Yun_Portrait.jpg/400px-Zhao_Yun_Portrait.jpg',
+    img: './assets/zhao_yun.svg',
     rank: 'S', cost: 980, war: 96, int: 76, lead: 92, maxHp: 110, hp: 110, faction: 'shu', troopType: 'cavalry', title: '상산 조자룡', quote: '주군을 굳건히 지키겠나이다!' 
   },
   { 
     id: 'sima_yi', name: '사마의 (司馬懿)', avatar: '🐅', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Sima_Yi_Portrait.jpg/400px-Sima_Yi_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Sima_Yi_Portrait.jpg/400px-Sima_Yi_Portrait.jpg',
+    img: './assets/sima_yi.svg',
     rank: 'S', cost: 980, war: 63, int: 98, lead: 97, maxHp: 95, hp: 95, faction: 'wei', troopType: 'archer', title: '총호 (冢虎)', quote: '천하의 향방은 참는 자의 것이다.' 
   },
   { 
     id: 'zhou_yu', name: '주유 (周瑜)', avatar: '🔥', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Zhou_Yu_Portrait.jpg/400px-Zhou_Yu_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Zhou_Yu_Portrait.jpg/400px-Zhou_Yu_Portrait.jpg',
+    img: './assets/zhou_yu.svg',
     rank: 'S', cost: 950, war: 71, int: 96, lead: 95, maxHp: 95, hp: 95, faction: 'wu', troopType: 'navy', title: '미주랑 (美周郞)', quote: '적벽의 불꽃으로 쳐부수리라!' 
   },
 
   // A급 명장
   { 
     id: 'zhang_liao', name: '장료 (張遼)', avatar: '🦅', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Zhang_Liao_Portrait.jpg/400px-Zhang_Liao_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Zhang_Liao_Portrait.jpg/400px-Zhang_Liao_Portrait.jpg',
+    img: './assets/zhang_liao.svg',
     rank: 'A', cost: 650, war: 92, int: 78, lead: 93, maxHp: 105, hp: 105, faction: 'wei', troopType: 'cavalry', title: '료래료래', quote: '합비의 신화가 또다시 시작된다.' 
   },
   { 
     id: 'xiahoudun', name: '하후돈 (夏侯惇)', avatar: '👁️', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Xiahou_Dun_Portrait.jpg/400px-Xiahou_Dun_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Xiahou_Dun_Portrait.jpg/400px-Xiahou_Dun_Portrait.jpg',
+    img: './assets/xiahoudun.svg',
     rank: 'A', cost: 600, war: 90, int: 63, lead: 89, maxHp: 100, hp: 100, faction: 'wei', troopType: 'cavalry', title: '맹장 (猛將)', quote: '부모님이 주신 눈을 어찌 버리리오!' 
   },
   { 
     id: 'taishici', name: '태사자 (太史慈)', avatar: '🏹', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Taishi_Ci_Portrait.jpg/400px-Taishi_Ci_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Taishi_Ci_Portrait.jpg/400px-Taishi_Ci_Portrait.jpg',
+    img: './assets/taishici.svg',
     rank: 'A', cost: 600, war: 93, int: 69, lead: 82, maxHp: 100, hp: 100, faction: 'wu', troopType: 'archer', title: '강동의 활신', quote: '대장부 세상에 태어나 기개를 펼치리라.' 
   },
   { 
     id: 'ganning', name: '감녕 (甘寧)', avatar: '⚓', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Gan_Ning_Portrait.jpg/400px-Gan_Ning_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Gan_Ning_Portrait.jpg/400px-Gan_Ning_Portrait.jpg',
+    img: './assets/ganning.svg',
     rank: 'A', cost: 620, war: 94, int: 56, lead: 86, maxHp: 100, hp: 100, faction: 'wu', troopType: 'navy', title: '흥패 (興霸)', quote: '밤을 타 적진을 주파해주마!' 
   },
   { 
     id: 'huang_zhong', name: '황충 (黃忠)', avatar: '🎯', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Huang_Zhong_Portrait.jpg/400px-Huang_Zhong_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Huang_Zhong_Portrait.jpg/400px-Huang_Zhong_Portrait.jpg',
+    img: './assets/huang_zhong.svg',
     rank: 'A', cost: 600, war: 93, int: 65, lead: 84, maxHp: 95, hp: 95, faction: 'shu', troopType: 'archer', title: '노익장 (老益壯)', quote: '내 화살은 결코 빗나가지 않는다.' 
   },
   { 
     id: 'wei_yan', name: '위연 (魏延)', avatar: '⚔️', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Wei_Yan_Portrait.jpg/400px-Wei_Yan_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Wei_Yan_Portrait.jpg/400px-Wei_Yan_Portrait.jpg',
+    img: './assets/wei_yan.svg',
     rank: 'A', cost: 580, war: 91, int: 69, lead: 85, maxHp: 100, hp: 100, faction: 'shu', troopType: 'infantry', title: '자오곡 기습', quote: '기습으로 적의 허를 치겠습니다!' 
   },
   { 
     id: 'lu_xun', name: '육손 (陸遜)', avatar: '📜', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Lu_Xun_Portrait.jpg/400px-Lu_Xun_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Lu_Xun_Portrait.jpg/400px-Lu_Xun_Portrait.jpg',
+    img: './assets/lu_xun.svg',
     rank: 'A', cost: 640, war: 69, int: 95, lead: 94, maxHp: 90, hp: 90, faction: 'wu', troopType: 'infantry', title: '이릉의 화신', quote: '적의 자만을 이용해 불태우겠습니다.' 
   },
 
   // B급 명장
   { 
     id: 'cao_ren', name: '조인 (曹仁)', avatar: '🛡️', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Cao_Ren_Portrait.jpg/400px-Cao_Ren_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Cao_Ren_Portrait.jpg/400px-Cao_Ren_Portrait.jpg',
+    img: './assets/cao_ren.svg',
     rank: 'B', cost: 380, war: 86, int: 62, lead: 89, maxHp: 90, hp: 90, faction: 'wei', troopType: 'infantry', title: '철벽의 방패', quote: '이 성은 단 한 걸음도 뚫리지 않는다!' 
   },
   { 
     id: 'xu_huang', name: '서황 (徐晃)', avatar: '🪓', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Xu_Huang_Portrait.jpg/400px-Xu_Huang_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Xu_Huang_Portrait.jpg/400px-Xu_Huang_Portrait.jpg',
+    img: './assets/xu_huang.svg',
     rank: 'B', cost: 360, war: 88, int: 71, lead: 84, maxHp: 85, hp: 85, faction: 'wei', troopType: 'infantry', title: '대도 (大斧)', quote: '법도를 엄수해 적을 벨 뿐이다.' 
   },
   { 
     id: 'zhutai', name: '주태 (周泰)', avatar: '🪵', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Zhou_Tai_Portrait.jpg/400px-Zhou_Tai_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Zhou_Tai_Portrait.jpg/400px-Zhou_Tai_Portrait.jpg',
+    img: './assets/zhutai.svg',
     rank: 'B', cost: 350, war: 90, int: 48, lead: 77, maxHp: 95, hp: 95, faction: 'wu', troopType: 'infantry', title: '불사신 (不死身)', quote: '주군을 위해 이 몸이 찢길지라도!' 
   },
   { 
     id: 'meng_huo', name: '맹획 (孟獲)', avatar: '🐘', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Meng_Huo_Portrait.jpg/400px-Meng_Huo_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Meng_Huo_Portrait.jpg/400px-Meng_Huo_Portrait.jpg',
+    img: './assets/meng_huo.svg',
     rank: 'B', cost: 340, war: 87, int: 45, lead: 80, maxHp: 90, hp: 90, faction: 'neutral', troopType: 'infantry', title: '남만왕 (南蠻王)', quote: '칠종칠금일지라도 굴하지 않는다!' 
   },
   { 
     id: 'yan_yan', name: '엄안 (嚴顏)', avatar: '🛡️', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Yan_Yan_Portrait.jpg/400px-Yan_Yan_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Yan_Yan_Portrait.jpg/400px-Yan_Yan_Portrait.jpg',
+    img: './assets/yan_yan.svg',
     rank: 'B', cost: 330, war: 83, int: 68, lead: 81, maxHp: 85, hp: 85, faction: 'shu', troopType: 'archer', title: '파주의 노장', quote: '우리 고을엔 항복하는 장수는 없다!' 
   },
 
   // C급 명장
   { 
     id: 'xiahou_mao', name: '하후무 (夏侯楙)', avatar: '💰', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Xiahou_Mao_Portrait.jpg/400px-Xiahou_Mao_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Xiahou_Mao_Portrait.jpg/400px-Xiahou_Mao_Portrait.jpg',
+    img: './assets/xiahou_mao.svg',
     rank: 'C', cost: 150, war: 52, int: 40, lead: 55, maxHp: 70, hp: 70, faction: 'wei', troopType: 'infantry', title: '부잣집 도령', quote: '어... 어쩌다 장수가 되었을 뿐입니다.' 
   },
   { 
     id: 'liu_shan', name: '유선 (劉禪)', avatar: '👑', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Liu_Shan_Portrait.jpg/400px-Liu_Shan_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Liu_Shan_Portrait.jpg/400px-Liu_Shan_Portrait.jpg',
+    img: './assets/liu_shan.svg',
     rank: 'C', cost: 150, war: 22, int: 35, lead: 30, maxHp: 70, hp: 70, faction: 'shu', troopType: 'infantry', title: '아두 (阿斗)', quote: '음, 성도에서는 가무가 즐겁군요.' 
   },
   { 
     id: 'mou_zhang', name: '무명 선봉장', avatar: '🗡️', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/400px-Chinese_Officer_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/400px-Chinese_Officer_Portrait.jpg',
+    img: './assets/mou_zhang.svg',
     rank: 'C', cost: 120, war: 65, int: 50, lead: 60, maxHp: 75, hp: 75, faction: 'neutral', troopType: 'infantry', title: '지방 의병장', quote: '천하의 도탄을 구하러 나섭니다!' 
   },
   { 
     id: 'xian_ling', name: '지방 현령', avatar: '📜', 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Chinese_Governor_Portrait.jpg/400px-Chinese_Governor_Portrait.jpg',
-    fallbackImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Chinese_Governor_Portrait.jpg/400px-Chinese_Governor_Portrait.jpg',
+    img: './assets/xian_ling.svg',
     rank: 'C', cost: 100, war: 45, int: 60, lead: 50, maxHp: 70, hp: 70, faction: 'neutral', troopType: 'archer', title: '수성 군관', quote: '성벽을 사수하십시오!' 
   }
 ];

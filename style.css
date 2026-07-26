@@ -202,18 +202,18 @@ body {
 
 .chess-board-8x8 {
   display: grid;
-  grid-template-columns: repeat(8, 78px);
-  grid-template-rows: repeat(8, 78px);
-  border: 12px solid #331e0b;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(245, 158, 11, 0.3);
+  grid-template-columns: repeat(8, 82px);
+  grid-template-rows: repeat(8, 82px);
+  border: 14px solid #2d1808;
+  border-radius: 14px;
+  box-shadow: 0 25px 65px rgba(0,0,0,0.95), 0 0 35px rgba(245, 158, 11, 0.35);
   position: relative;
   background: #0f172a;
 }
 
 .chess-square {
-  width: 78px;
-  height: 78px;
+  width: 82px;
+  height: 82px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -230,10 +230,10 @@ body {
   background: #334155;
 }
 
-/* 하이라이트 */
+/* 하이라이트 셀 */
 .chess-square.square-selected {
-  background: rgba(245, 158, 11, 0.6) !important;
-  box-shadow: inset 0 0 12px #fef08a;
+  background: rgba(245, 158, 11, 0.65) !important;
+  box-shadow: inset 0 0 14px #fef08a;
 }
 
 .chess-square.square-movable::after {
@@ -241,22 +241,22 @@ body {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: rgba(16, 185, 129, 0.7);
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.9);
+  background: rgba(16, 185, 129, 0.85);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 1);
 }
 
 .chess-square.square-attackable {
-  background: rgba(239, 68, 68, 0.65) !important;
+  background: rgba(239, 68, 68, 0.7) !important;
   animation: squarePulseRed 1s infinite alternate;
 }
 
 @keyframes squarePulseRed {
   0% { box-shadow: inset 0 0 0 0 rgba(239, 68, 68, 0.9); }
-  100% { box-shadow: inset 0 0 15px 4px rgba(239, 68, 68, 0.6); }
+  100% { box-shadow: inset 0 0 16px 4px rgba(239, 68, 68, 0.7); }
 }
 
 .chess-square.square-check {
-  background: rgba(220, 38, 38, 0.85) !important;
+  background: rgba(220, 38, 38, 0.9) !important;
   animation: checkFlash 0.6s infinite alternate;
 }
 
@@ -266,83 +266,57 @@ body {
 }
 
 /* ------------------------------------------------------------- */
-/* ♟️ 3. 직관적인 3D 체스 기물 형태 토큰 (Chess Piece Shape Token) */
+/* ♟️ 3. 외형 실루엣 중심의 3D 체스 피스 조각 디자인 (Visual Piece Shapes) */
 /* ------------------------------------------------------------- */
-.chess-piece-shape {
-  width: 70px;
-  height: 70px;
-  border-radius: 12px;
-  background: linear-gradient(145deg, #1e293b, #0f172a);
-  border: 3px solid var(--gold-primary);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: 3px;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.8);
-  transition: transform 0.2s ease;
+.chess-visual-piece {
+  width: 74px;
+  height: 74px;
   position: relative;
-}
-
-.chess-piece-shape.player-piece {
-  border-color: #3b82f6;
-  box-shadow: 0 0 12px rgba(59, 130, 246, 0.8);
-}
-
-.chess-piece-shape.ai-piece {
-  border-color: #ef4444;
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
-}
-
-/* 체스 기물 타입별 상단 뱃지 (♚ KING, ♛ QUEEN, ♜ ROOK, ♞ KNIGHT, ♝ BISHOP, ♟ PAWN) */
-.piece-role-header {
-  width: 100%;
-  font-size: 0.72rem;
-  font-weight: 900;
-  text-align: center;
-  padding: 1px 0;
-  border-radius: 4px;
-  color: #fff;
-  letter-spacing: 0.5px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  filter: drop-shadow(0 6px 8px rgba(0,0,0,0.8));
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* 기물 종류별 구분 배경색 */
-.piece-role-header.king { background: linear-gradient(90deg, #b45309, #f59e0b); color: #000; }
-.piece-role-header.queen { background: linear-gradient(90deg, #6b21a8, #a855f7); color: #fff; }
-.piece-role-header.rook { background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: #fff; }
-.piece-role-header.knight { background: linear-gradient(90deg, #065f46, #10b981); color: #fff; }
-.piece-role-header.bishop { background: linear-gradient(90deg, #991b1b, #ef4444); color: #fff; }
-.piece-role-header.pawn { background: linear-gradient(90deg, #374151, #6b7280); color: #fff; }
+.chess-visual-piece:hover {
+  transform: scale(1.1) translateY(-4px);
+}
 
-.piece-hero-body {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+/* SVG 체스 피스 외형 컨테이너 */
+.piece-svg-container {
   width: 100%;
-  justify-content: center;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
-.piece-hero-img {
-  width: 38px;
-  height: 38px;
+/* 무장 초상화 원형 인셋 (체스 피스 가슴 중앙) */
+.piece-portrait-inset {
+  position: absolute;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--gold-primary);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  border: 2px solid #fef08a;
+  box-shadow: 0 0 8px rgba(0,0,0,0.9);
+  z-index: 5;
 }
 
-.piece-hero-name {
-  font-size: 0.68rem;
+/* 무장 이름 가독 미니 텍스트 */
+.piece-name-label {
+  position: absolute;
+  bottom: 2px;
+  font-size: 0.62rem;
   font-weight: 900;
-  color: #f8fafc;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.9);
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid var(--gold-primary);
+  z-index: 6;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 26px;
 }
 
 /* Modals Overlay */

@@ -1,4 +1,4 @@
-// 삼국지 영웅전 : 8x8 정통 체스 엔진 (직관적 체스 기물 형태 토큰 적용)
+// 삼국지 영웅전 : 8x8 정통 체스 엔진 (외형 실루엣 중심의 3D 체스 피스 디자인 적용)
 import { 
   loginWithGoogle, 
   loginAsGuest, 
@@ -14,7 +14,6 @@ let gameState = {
   playerFactionId: 'shu',
   aiFactionId: 'wei',
   
-  // 8x8 체스판 (null 또는 Piece 객체)
   board: Array(8).fill(null).map(() => Array(8).fill(null)),
   
   selectedPos: null,
@@ -166,20 +165,69 @@ function initBoard() {
 }
 
 // -------------------------------------------------------------
-// ♟️ 직관적인 체스 기물 렌더링 (Piece Shape Token)
+// 🎨 3D 체스 피스 실루엣 SVG 외형 디자인 생성기
+// -------------------------------------------------------------
+function generateVisualPieceSVG(pieceType, isPlayer) {
+  const primaryColor = isPlayer ? '#f59e0b' : '#ef4444';
+  const strokeColor = isPlayer ? '#fef08a' : '#f87171';
+  const baseGradStart = isPlayer ? '#d97706' : '#991b1b';
+  const baseGradEnd = isPlayer ? '#451a03' : '#450a0a';
+
+  let pathData = '';
+
+  // 정통 체스 피스 외형 실루엣 셰이프
+  if (pieceType === 'king') {
+    // 십자가 왕관 킹 셰이프
+    pathData = `
+      M 34,10 L 46,10 L 46,18 L 54,18 L 54,26 L 46,26 L 46,32 C 55,32 64,24 64,40 C 64,52 56,58 56,66 L 68,70 L 68,76 L 12,76 L 12,70 L 24,66 C 24,58 16,52 16,40 C 16,24 25,32 34,32 L 34,26 L 26,26 L 26,18 L 34,18 Z
+    `;
+  } else if (pieceType === 'queen') {
+    // 5봉 봉우리 퀸 왕관 셰이프
+    pathData = `
+      M 16,24 L 24,44 L 32,20 L 40,44 L 48,20 L 56,44 L 64,24 L 60,56 C 60,64 56,68 56,70 L 68,74 L 68,78 L 12,78 L 12,74 L 24,70 C 24,68 20,64 20,56 Z
+    `;
+  } else if (pieceType === 'rook') {
+    // 성곽 탑 룩 셰이프
+    pathData = `
+      M 18,20 L 28,20 L 28,28 L 36,28 L 36,20 L 44,20 L 44,28 L 52,28 L 52,20 L 62,20 L 58,40 L 56,68 L 66,72 L 66,78 L 14,78 L 14,72 L 24,68 L 22,40 Z
+    `;
+  } else if (pieceType === 'knight') {
+    // 말머리 나이트 셰이프
+    pathData = `
+      M 32,16 C 44,16 58,24 58,38 C 58,46 50,52 54,58 C 58,64 64,66 64,72 L 64,78 L 16,78 L 16,72 C 16,62 26,56 26,44 C 26,34 18,36 18,28 C 18,20 24,16 32,16 Z
+    `;
+  } else if (pieceType === 'bishop') {
+    // 뾰족한 비숍 성직자 모자 셰이프
+    pathData = `
+      M 40,12 C 43,12 45,14 45,17 C 45,20 43,22 40,22 C 37,22 35,20 35,17 C 35,14 37,12 40,12 Z M 40,24 C 52,24 60,38 56,56 C 56,64 58,68 58,72 L 66,74 L 66,78 L 14,78 L 14,74 L 22,72 C 22,68 24,64 24,56 C 20,38 28,24 40,24 Z
+    `;
+  } else {
+    // 둥근 폰 셰이프
+    pathData = `
+      M 40,18 C 48,18 54,24 54,32 C 54,38 48,42 46,46 L 50,62 L 60,68 L 60,76 L 20,76 L 20,68 L 30,62 L 34,46 C 32,42 26,38 26,32 C 26,24 32,18 40,18 Z
+    `;
+  }
+
+  return `
+    <svg class="piece-svg-container" viewBox="0 0 80 85" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad_${pieceType}_${isPlayer}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${primaryColor}" />
+          <stop offset="50%" stop-color="${baseGradStart}" />
+          <stop offset="100%" stop-color="${baseGradEnd}" />
+        </linearGradient>
+      </defs>
+      <path d="${pathData}" fill="url(#grad_${pieceType}_${isPlayer})" stroke="${strokeColor}" stroke-width="2.5" stroke-linejoin="round"/>
+    </svg>
+  `;
+}
+
+// -------------------------------------------------------------
+// ♟️ 외형 실루엣 체스 피스 렌더링
 // -------------------------------------------------------------
 function renderBoard() {
   const boardEl = document.getElementById('chessBoard8x8');
   boardEl.innerHTML = '';
-
-  const roleLabels = {
-    king: 'KING',
-    queen: 'QUEEN',
-    rook: 'ROOK',
-    knight: 'KNIGHT',
-    bishop: 'BISHOP',
-    pawn: 'PAWN'
-  };
 
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
@@ -204,21 +252,22 @@ function renderBoard() {
         }
 
         const heroFirstName = piece.name.split(' ')[0];
-        const roleName = roleLabels[piece.pieceType] || 'PIECE';
+        const isPlayer = piece.owner === 'player';
 
-        const shape = document.createElement('div');
-        shape.className = `chess-piece-shape ${piece.owner === 'player' ? 'player-piece' : 'ai-piece'}`;
-        shape.innerHTML = `
-          <div class="piece-role-header ${piece.pieceType}">
-            <span>${piece.symbol}</span>
-            <span>${roleName}</span>
-          </div>
-          <div class="piece-hero-body">
-            <img class="piece-hero-img" src="${piece.img}" alt="${piece.name}" onerror="this.src='${piece.fallbackImg || './assets/guan_yu.svg'}';">
-            <span class="piece-hero-name">${heroFirstName}</span>
-          </div>
+        const visualPiece = document.createElement('div');
+        visualPiece.className = 'chess-visual-piece';
+
+        // 1. 체스 피스 실루엣 SVG
+        const svgHTML = generateVisualPieceSVG(piece.pieceType, isPlayer);
+
+        // 2. 무장 초상화 원형 인셋
+        visualPiece.innerHTML = `
+          ${svgHTML}
+          <img class="piece-portrait-inset" src="${piece.img}" alt="${piece.name}" onerror="this.src='${piece.fallbackImg || './assets/guan_yu.svg'}';">
+          <span class="piece-name-label">${heroFirstName}</span>
         `;
-        square.appendChild(shape);
+
+        square.appendChild(visualPiece);
       }
 
       square.addEventListener('click', () => onSquareClick(r, c));
@@ -232,7 +281,6 @@ function onSquareClick(r, c) {
 
   const clickedPiece = gameState.board[r][c];
 
-  // 1. 이미 선택된 내 기물이 있고, 이동 또는 공격 셀을 클릭한 경우
   if (gameState.selectedPos) {
     const isMovable = gameState.validMoves.some(m => m.r === r && m.c === c);
     const isAttackable = gameState.validAttacks.some(a => a.r === r && a.c === c);
@@ -243,7 +291,6 @@ function onSquareClick(r, c) {
     }
   }
 
-  // 2. 아군 기물을 클릭하여 선택한 경우
   if (clickedPiece && clickedPiece.owner === 'player') {
     gameState.selectedPos = { r, c };
     calculateValidMoves(r, c, clickedPiece);
@@ -257,7 +304,7 @@ function onSquareClick(r, c) {
 }
 
 // -------------------------------------------------------------
-// ♟️ 정통 체스 기물 이동 알고리즘 (Chess Rules)
+// ♟️ 정통 체스 기물 이동 알고리즘
 // -------------------------------------------------------------
 function calculateValidMoves(r, c, piece) {
   gameState.validMoves = [];
@@ -270,17 +317,14 @@ function calculateValidMoves(r, c, piece) {
     const dir = isPlayer ? -1 : 1;
     const startRow = isPlayer ? 6 : 1;
 
-    // 1칸 전진
     if (r + dir >= 0 && r + dir < 8 && !gameState.board[r + dir][c]) {
       gameState.validMoves.push({ r: r + dir, c });
 
-      // 첫 턴 2칸 전진
       if (r === startRow && !gameState.board[r + 2 * dir][c]) {
         gameState.validMoves.push({ r: r + 2 * dir, c });
       }
     }
 
-    // 대각선 공격 (상대 기물 잡기)
     [c - 1, c + 1].forEach(nc => {
       if (r + dir >= 0 && r + dir < 8 && nc >= 0 && nc < 8) {
         const target = gameState.board[r + dir][nc];

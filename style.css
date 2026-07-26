@@ -27,8 +27,8 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   background-image: 
-    radial-gradient(circle at 10% 20%, rgba(249, 115, 22, 0.05) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
+    radial-gradient(circle at 10% 20%, rgba(249, 115, 22, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.06) 0%, transparent 40%);
 }
 
 #app {
@@ -97,80 +97,140 @@ body {
 }
 
 /* ------------------------------------------------------------- */
-/* 🍳 2. 전면 히어로 웰컴 영역 & 6대 카테고리 셀렉터 */
+/* 👩‍🍳 2. 첫 화면: 귀여운 '기몌진 셰프' 히어로 랜딩 존 */
 /* ------------------------------------------------------------- */
-.hero-banner {
-  background: linear-gradient(135deg, #ffedd5, #fef3c7);
-  border-radius: 24px;
+.chef-hero-section {
+  background: linear-gradient(135deg, #fff7ed, #ffedd5, #fef3c7);
+  border-radius: 28px;
   margin: 24px;
   padding: 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 10px 30px rgba(249, 115, 22, 0.1);
-  border: 1px solid rgba(249, 115, 22, 0.2);
+  box-shadow: 0 12px 35px rgba(249, 115, 22, 0.12);
+  border: 2px solid rgba(249, 115, 22, 0.2);
+  position: relative;
+  overflow: hidden;
 }
 
-.hero-text-box h1 {
-  font-size: 2.5rem;
+.chef-hero-left {
+  flex: 1;
+  max-width: 600px;
+  z-index: 10;
+}
+
+.chef-hero-left h1 {
+  font-size: 2.8rem;
   font-weight: 900;
   color: #7c2d12;
-  margin-bottom: 12px;
+  line-height: 1.2;
+  margin-bottom: 16px;
 }
 
-.hero-text-box p {
-  font-size: 1.15rem;
-  color: #9a3412;
-  line-height: 1.6;
-}
-
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
-  padding: 0 24px 24px 24px;
-}
-
-.category-card {
+/* 💬 말풍선 인터랙티브 텍스트 (Speech Bubble) */
+.speech-bubble {
+  position: relative;
   background: #ffffff;
-  border: 2px solid #f1f5f9;
   border-radius: 20px;
-  padding: 24px 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  padding: 20px 24px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #9a3412;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  border: 2px solid var(--orange-primary);
+  margin-bottom: 24px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.category-card:hover, .category-card.active {
-  transform: translateY(-8px);
-  border-color: var(--orange-primary);
-  box-shadow: 0 12px 30px rgba(249, 115, 22, 0.2);
-  background: var(--warm-bg, #fff);
+.speech-bubble:hover {
+  transform: scale(1.02);
 }
 
-.category-card .icon {
-  font-size: 3rem;
-  margin-bottom: 12px;
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  right: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 10px 0 10px 16px;
+  border-style: solid;
+  border-color: transparent transparent transparent #ffffff;
 }
 
-.category-card .title {
-  font-size: 1.3rem;
+.speech-bubble::before {
+  content: '';
+  position: absolute;
+  right: -19px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 11px 0 11px 18px;
+  border-style: solid;
+  border-color: transparent transparent transparent var(--orange-primary);
+}
+
+.hero-quick-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.quick-action-btn {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 30px;
+  font-family: inherit;
+  font-size: 1.05rem;
   font-weight: 900;
-  color: #1e293b;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.category-card .desc {
-  font-size: 0.8rem;
-  color: #64748b;
-  text-align: center;
-  margin-top: 6px;
+.quick-action-btn:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 10px 25px rgba(249, 115, 22, 0.6);
+}
+
+/* 귀여운 여자 요리사 캐릭터 일러스트 박스 */
+.chef-character-box {
+  width: 380px;
+  height: 380px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: chefFloat 3.5s infinite ease-in-out;
+  cursor: pointer;
+}
+
+@keyframes chefFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(1deg); }
+}
+
+.chef-character-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 15px 25px rgba(249, 115, 22, 0.25));
+  transition: transform 0.3s ease;
+}
+
+.chef-character-box:hover .chef-character-img {
+  transform: scale(1.06);
 }
 
 /* ------------------------------------------------------------- */
-/* 🍱 3. 레시피 그리드 & 음식 카드 */
+/* 🍱 3. 6대 요리 카테고리 셀렉터 */
 /* ------------------------------------------------------------- */
 .section-header-title {
   font-size: 1.6rem;
@@ -183,6 +243,54 @@ body {
   gap: 10px;
 }
 
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 18px;
+  padding: 0 24px 24px 24px;
+}
+
+.category-card {
+  background: #ffffff;
+  border: 2px solid #f1f5f9;
+  border-radius: 20px;
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+.category-card:hover, .category-card.active {
+  transform: translateY(-8px);
+  border-color: var(--orange-primary);
+  box-shadow: 0 12px 30px rgba(249, 115, 22, 0.2);
+  background: #fff;
+}
+
+.category-card .icon {
+  font-size: 2.8rem;
+  margin-bottom: 10px;
+}
+
+.category-card .title {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #1e293b;
+}
+
+.category-card .desc {
+  font-size: 0.78rem;
+  color: #64748b;
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* ------------------------------------------------------------- */
+/* 🍱 4. 레시피 그리드 & 음식 카드 */
+/* ------------------------------------------------------------- */
 .recipe-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -271,7 +379,7 @@ body {
 }
 
 /* ------------------------------------------------------------- */
-/* 🥬 4. 재료 손질 & 보관 꿀팁 패널 */
+/* 🥬 5. 재료 손질 & 보관 꿀팁 패널 */
 /* ------------------------------------------------------------- */
 .ingredient-tips-grid {
   display: grid;
@@ -323,9 +431,7 @@ body {
   color: #334155;
 }
 
-/* ------------------------------------------------------------- */
-/* ⏱️ 5. 상세 레시피 모달 & 조리 타이머 */
-/* ------------------------------------------------------------- */
+/* Modals Overlay */
 .modal-overlay {
   position: fixed;
   top: 0;

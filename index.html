@@ -31,15 +31,38 @@
       </nav>
     </header>
 
-    <!-- 🍳 2. 히어로 배너 (웰컴 인사) -->
-    <section class="hero-banner">
-      <div class="hero-text-box">
-        <h1>요리가 쉬워지는 치트키, 요리왕 기몌진! 🍳</h1>
-        <p>
-          "요리가 처음이어도 괜찮아요! 밥숟가락 계량법과 10분 뚝딱 레시피로 실패 없는 한 끼를 완성해 드릴게요."
-        </p>
+    <!-- 👩‍🍳 2. 첫 화면: 귀여운 여자 요리사 캐릭터 '기몌진 셰프' 히어로 랜딩 존 -->
+    <section class="chef-hero-section">
+      <div class="chef-hero-left">
+        <h1>안녕하세요!<br>요리왕 기몌진입니다 🍳</h1>
+        
+        <!-- 💬 말풍선 대화 인터랙션 -->
+        <div id="chefSpeechBubble" class="speech-bubble" onclick="nextChefQuote()">
+          <span>💬</span>
+          <span id="chefQuoteText">"오늘 어떤 맛있는 요리를 만들어볼까요? 눌러보세요!"</span>
+        </div>
+
+        <!-- 🚀 3대 퀵 액션 버튼 -->
+        <div class="hero-quick-actions">
+          <button class="quick-action-btn" onclick="openFridgeModal()">
+            <span>🧊</span>
+            <span>냉장고 파먹기</span>
+          </button>
+          <button class="quick-action-btn" style="background: linear-gradient(135deg, #10b981, #059669);" onclick="switchMainTab('tips')">
+            <span>🥬</span>
+            <span>재료 손질 꿀팁</span>
+          </button>
+          <button class="quick-action-btn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);" onclick="filterCategory('all')">
+            <span>📖</span>
+            <span>모든 레시피 보기</span>
+          </button>
+        </div>
       </div>
-      <div style="font-size: 5rem;">🧑‍🍳</div>
+
+      <!-- 👩‍🍳 귀여운 요리사 기몌진 캐릭터 일러스트 -->
+      <div class="chef-character-box" onclick="nextChefQuote()">
+        <img class="chef-character-img" src="./assets/chef_gimyejin.svg" alt="기몌진 셰프">
+      </div>
     </section>
 
     <!-- 🍱 3. 6대 요리 카테고리 선택 갤러리 -->

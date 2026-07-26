@@ -1,11 +1,4 @@
-const fs = require('fs');
-const path = require('path');
-
-const assetsDir = path.join(__dirname, 'assets');
-if (!fs.existsSync(assetsDir)) fs.mkdirSync(assetsDir);
-
-// 귀여운 3D/2D 애니 스타일 여자 요리사 캐릭터 '기몌진 셰프' SVG 자원
-const chefSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#fff7ed"/>
@@ -73,7 +66,4 @@ const chefSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" w
     <!-- 리본 / 로고 -->
     <circle cx="250" cy="140" r="7" fill="#f97316"/>
   </g>
-</svg>`;
-
-fs.writeFileSync(path.join(assetsDir, 'chef_gimyejin.svg'), chefSvg);
-console.log('Successfully generated Chef Gimyejin SVG character asset!');
+</svg>

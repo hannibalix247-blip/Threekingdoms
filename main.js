@@ -1,8 +1,19 @@
-// 요리왕, 기몌진 메인 애플리케이션 엔진
+// 요리왕, 기몌진 메인 애플리케이션 엔진 (기몌진 셰프 말풍선 인터랙션 포함)
 
 let currentCategory = 'all';
 let currentTab = 'recipes';
 let activeTimer = null;
+let currentQuoteIndex = 0;
+
+const CHEF_QUOTES = [
+  "오늘 어떤 맛있는 요리를 만들어볼까요? 눌러보세요! 🍳",
+  "요리가 약간 탄 것 같다고요? 당황하지 말고 탄 부분을 잘라내고 참기름 한 방울! 💡",
+  "밥숟가락 1스푼 = 15ml! 숟가락만 있으면 계량 스푼 없이도 간 맞추기 성공! 🥄",
+  "냉장고 파먹기 버튼을 누르고 지금 남아있는 재료를 체크해 보세요! 🧊",
+  "양파 써실 땐 찬물에 10분 담가두면 눈물이 쏙 들어간답니다! 🧅",
+  "찌개가 짜면 양파나 무를 더 넣고, 싱거우면 국간장 0.5스푼! 🍲",
+  "오늘도 맛있는 한 끼 먹고 힘내세요! 기몌진이 항상 응원합니다 🧡"
+];
 
 window.filterCategory = filterCategory;
 window.switchMainTab = switchMainTab;
@@ -11,12 +22,25 @@ window.closeModal = closeModal;
 window.openRecipeDetail = openRecipeDetail;
 window.findFridgeRecipes = findFridgeRecipes;
 window.startRecipeTimer = startRecipeTimer;
+window.nextChefQuote = nextChefQuote;
 
 document.addEventListener('DOMContentLoaded', () => {
   renderRecipes();
   renderTips();
   initFridgeChecklist();
 });
+
+function nextChefQuote() {
+  currentQuoteIndex = (currentQuoteIndex + 1) % CHEF_QUOTES.length;
+  const quoteEl = document.getElementById('chefQuoteText');
+  if (quoteEl) {
+    quoteEl.style.opacity = 0;
+    setTimeout(() => {
+      quoteEl.textContent = `"${CHEF_QUOTES[currentQuoteIndex]}"`;
+      quoteEl.style.opacity = 1;
+    }, 150);
+  }
+}
 
 function switchMainTab(tabName) {
   currentTab = tabName;

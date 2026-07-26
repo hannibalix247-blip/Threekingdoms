@@ -1,4 +1,4 @@
-// 삼국지 영웅전 메인 게임 엔진 (타이틀 화면, 무장 사진, 무장 HP 체력/사망, 출전 장수 선택 시스템)
+// 삼국지 영웅전 메인 게임 엔진 (통일된 일러스트 이미지 & 직관적 출전 장수 선택 갤러리)
 import { 
   loginWithGoogle, 
   loginAsGuest, 
@@ -24,7 +24,6 @@ let gameState = {
   battle: null
 };
 
-// 전역 바인딩 (HTML onClick 핸들러)
 window.selectFaction = selectFaction;
 window.buyHero = buyHero;
 window.playDuelRoundSimultaneous = playDuelRoundSimultaneous;
@@ -37,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initCanvas();
   window.addEventListener('resize', initCanvas);
 
-  // 타이틀 스크린 게임 시작 버튼
   const btnStart = document.getElementById('btnStartGameTitle');
   if (btnStart) {
     btnStart.addEventListener('click', () => {
@@ -211,7 +209,6 @@ function updateResourcesUI() {
   }
 }
 
-// 보유 무장 Roster 렌더링 (얼굴 이미지 & HP 체력 바 표시)
 function renderHeroRoster() {
   const container = document.getElementById('heroRoster');
   container.innerHTML = '';
@@ -226,7 +223,7 @@ function renderHeroRoster() {
     chip.className = `hero-chip rank-${hero.rank}`;
     chip.innerHTML = `
       <div style="display: flex; align-items: center; gap: 10px;">
-        <img class="hero-portrait-img" src="${hero.img}" alt="${hero.name}" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/300px-Chinese_Officer_Portrait.jpg';">
+        <img class="hero-portrait-img" src="${hero.img}" alt="${hero.name}">
         <div>
           <div><strong style="color: #f8fafc;">${hero.name}</strong> <span class="hero-chip-rank ${hero.rank}">${hero.rank}</span></div>
           <div style="font-size: 0.75rem; color: var(--gold-light);">⚔️${hero.war} | 🧠${hero.int}</div>
@@ -350,7 +347,7 @@ function onCityClick(city) {
     const attackBtn = document.createElement('button');
     attackBtn.className = 'header-btn';
     attackBtn.style.cssText = 'width: 100%; margin-top: 12px; padding: 10px; background: linear-gradient(135deg, #dc2626, #ef4444);';
-    attackBtn.innerHTML = '⚔️ 출진하기 (장수 선택)';
+    attackBtn.innerHTML = '⚔️ 출진하기 (선봉장 선택)';
     attackBtn.onclick = () => openHeroSelectModal(city, false);
     container.appendChild(attackBtn);
   } else if (isOwner) {
@@ -367,7 +364,7 @@ function onCityClick(city) {
 }
 
 // -------------------------------------------------------------
-// 🪖 출전 장수 선택 모달 (Battle Hero Selection)
+// 🪖 직관적 출전 장수 선택 갤러리 모달 (Intuitive Hero Selection)
 // -------------------------------------------------------------
 function openHeroSelectModal(targetCity, isDefensive = false) {
   gameState.pendingBattleCity = targetCity;
@@ -376,7 +373,7 @@ function openHeroSelectModal(targetCity, isDefensive = false) {
   const grid = document.getElementById('heroSelectGrid');
   grid.innerHTML = '';
 
-  document.getElementById('heroSelectTitle').textContent = isDefensive ? `🛡️ ${targetCity.name} 수성 방어전 출전 장수 선택 🛡️` : `⚔️ ${targetCity.name} 공성전 출전 장수 선택 ⚔️`;
+  document.getElementById('heroSelectTitle').textContent = isDefensive ? `🛡️ ${targetCity.name} 수성 방어전 선봉장 선택 🛡️` : `⚔️ ${targetCity.name} 공성전 선봉장 선택 ⚔️`;
 
   gameState.recruitingHeroes.forEach((hero, index) => {
     const hpPercent = Math.max(0, Math.round((hero.hp / hero.maxHp) * 100));
@@ -384,14 +381,21 @@ function openHeroSelectModal(targetCity, isDefensive = false) {
     const card = document.createElement('div');
     card.className = 'hero-select-card';
     card.innerHTML = `
-      <img class="portrait-large" src="${hero.img}" alt="${hero.name}" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/300px-Chinese_Officer_Portrait.jpg';">
-      <div style="font-weight: 900; font-size: 1.1rem; color: #fff;">${hero.name}</div>
-      <div style="font-size: 0.8rem; color: var(--gold-light);">${hero.title}</div>
-      <div style="font-size: 0.85rem; color: #cbd5e1; margin: 6px 0;">⚔️ 무력:${hero.war} | 🧠 지력:${hero.int} | 🛡️ 통솔:${hero.lead}</div>
+      <img class="portrait-large" src="${hero.img}" alt="${hero.name}">
+      <div class="hero-select-name">${hero.name}</div>
+      <div class="hero-select-title">${hero.title}</div>
+      
+      <div class="stat-row">
+        <span>⚔️ 무력: <b>${hero.war}</b></span>
+        <span>🧠 지력: <b>${hero.int}</b></span>
+      </div>
+
       <div class="hero-hp-container" style="width: 100%;">
         <div class="hero-hp-bar"><div class="hp-fill" style="width: ${hpPercent}%;"></div></div>
         <div class="hp-text">HP ${hero.hp} / ${hero.maxHp}</div>
       </div>
+
+      <button class="btn-select-hero-action">⚔️ 선봉장으로 출전!</button>
     `;
 
     card.onclick = () => confirmHeroSelect(index);
@@ -423,7 +427,7 @@ function openHeroShop() {
     card.innerHTML = `
       <div class="hero-card-header">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <img style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;" src="${hero.img}" alt="${hero.name}">
+          <img style="width: 36px; height: 36px; border-radius: 6px; object-fit: cover;" src="${hero.img}" alt="${hero.name}">
           <span class="hero-name">${hero.name}</span>
         </div>
         <span class="hero-chip-rank ${hero.rank}">${hero.rank}급</span>
@@ -459,16 +463,14 @@ function buyHero(heroId) {
   openHeroShop();
 }
 
-// -------------------------------------------------------------
-// ⚔️ 전투 및 무장 체력 (HP) & 전사(사망) 처리 시스템
-// -------------------------------------------------------------
-
 function startBattle(targetCity, selectedHero, isDefensive = false) {
   const enemyWar = Math.floor(65 + Math.random() * 25);
   const enemyMaxHp = 100;
+  
+  // 적 수성 장수 통일된 일러스트 SVG 생성
   const enemyHero = { 
     name: `${targetCity.name} 수성 장수`, 
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chinese_Officer_Portrait.jpg/300px-Chinese_Officer_Portrait.jpg', 
+    img: generateHeroPortraitSVG('수성장수', '#dc2626', '🛡️', ['#450a0a', '#991b1b']), 
     war: enemyWar, 
     int: Math.floor(50 + Math.random() * 30), 
     lead: Math.floor(60 + Math.random() * 30),
@@ -503,7 +505,7 @@ function startBattle(targetCity, selectedHero, isDefensive = false) {
   resetRevealCards();
   switchBattleStageView(1);
   document.getElementById('modalBattle').classList.add('active');
-  logBattle(`[전투 개시] 출전 명장 [${selectedHero.name}] (HP:${selectedHero.hp}/${selectedHero.maxHp}) 이(가) 선봉에 섭니다.`);
+  logBattle(`[전투 개시] 선봉장 [${selectedHero.name}] (HP:${selectedHero.hp}/${selectedHero.maxHp}) 이(가) 출전합니다.`);
 }
 
 function updateHeroHpUI() {
@@ -620,11 +622,9 @@ function playDuelRoundSimultaneous(playerChoice) {
     updateHeroHpUI();
     renderHeroRoster();
 
-    // ☠️ 무장 전사(사망) 체크
     if (b.playerHero.hp <= 0) {
       soundManager.playDefeat();
       logBattle(`☠️ [무장 전사!] ${b.playerHero.name} 장수가 치명상을 입고 사망(전열 이탈)했습니다!`);
-      // 명단에서 사망 처리
       gameState.recruitingHeroes = gameState.recruitingHeroes.filter(h => h.name !== b.playerHero.name);
       renderHeroRoster();
 
@@ -769,7 +769,6 @@ function processEndTurn() {
   gameState.gold += incomeGold;
   gameState.food += incomeFood;
 
-  // 장수 체력 회복 턴 보너스 (+15 HP)
   gameState.recruitingHeroes.forEach(h => {
     h.hp = Math.min(h.maxHp, h.hp + 15);
   });

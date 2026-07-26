@@ -1,142 +1,276 @@
-// 삼국지 영웅전 : 3단계 스토리텔링 체스 캠페인 데이터 정의
+// 요리왕, 기몌진 : 초보자 레시피 & 재료 손질 팁 데이터 정의
 
-const STORY_CAMPAIGNS = [
+const CATEGORIES = [
+  { id: 'korean', name: '한식 🇰🇷', icon: '🍲', desc: '뜨끈한 찌개, 정갈한 밑반찬과 제육볶음' },
+  { id: 'chinese', name: '중식 🇨🇳', icon: '🥢', desc: '초간단 마파두부와 고슬고슬 볶음밥' },
+  { id: 'japanese', name: '일식 🇯🇵', icon: '🍱', desc: '달콤 짭조름한 규동과 야키소바' },
+  { id: 'western', name: '양식 🍝', icon: '🍝', desc: '투움바 파스타와 마늘 향 풍부한 감바스' },
+  { id: 'snack', name: '분식 🌶️', icon: '🥘', desc: '자취생 영혼의 구원자, 국물 떡볶이' },
+  { id: 'special', name: '스페셜 🌟', icon: '🍳', desc: '냉장고 파먹기 치트키 & 10분 뚝딱 요리' }
+];
+
+const INGREDIENT_TIPS = [
   {
-    id: 'stage1',
-    level: '하 (초보자)',
-    levelNum: 1,
-    title: '💛 1단계: 황건의 난 (The Yellow Turban Rebellion)',
-    bossName: '장각 (황건적 군주)',
-    icon: '💛',
-    color: '#eab308',
-    aiDifficulty: 'easy', // 초보자 AI
-    briefing: `184년, "창천이 이미 죽으니 황천이 마땅히 서리라!"\n\n난세의 첫 기치로 일으켜진 황건적의 대군과 맞닥뜨렸습니다.\n장각이 이끄는 황건적 무리는 기세는 높으나 전술이 경솔합니다.\n초보 군주로서 체스의 기본 기동과 기물 잡기를 연습하며 첫 승리를 거두십시오!`,
-    aiFaction: {
-      name: '황건적 (黃巾)',
-      ruler: '장각',
-      pieces: {
-        king: { name: '장각 (King)', symbol: '♚', img: './assets/liu_shan.svg', pieceType: 'king', owner: 'ai' },
-        queen: { name: '장량 (Queen)', symbol: '♛', img: './assets/sima_yi.svg', pieceType: 'queen', owner: 'ai' },
-        rook1: { name: '장보 (Rook)', symbol: '♜', img: './assets/cao_ren.svg', pieceType: 'rook', owner: 'ai' },
-        rook2: { name: '관해 (Rook)', symbol: '♜', img: './assets/xu_huang.svg', pieceType: 'rook', owner: 'ai' },
-        bishop1: { name: '배원소 (Bishop)', symbol: '♝', img: './assets/meng_huo.svg', pieceType: 'bishop', owner: 'ai' },
-        bishop2: { name: '등무 (Bishop)', symbol: '♝', img: './assets/yan_yan.svg', pieceType: 'bishop', owner: 'ai' },
-        knight1: { name: '정원지 (Knight)', symbol: '♞', img: './assets/xiahou_mao.svg', pieceType: 'knight', owner: 'ai' },
-        knight2: { name: '고승 (Knight)', symbol: '♞', img: './assets/xian_ling.svg', pieceType: 'knight', owner: 'ai' },
-        pawn: { name: '황건적 도적 (Pawn)', symbol: '♟', img: './assets/mou_zhang.svg', pieceType: 'pawn', owner: 'ai' }
-      }
-    }
+    id: 'green_onion',
+    name: '대파 손질 & 냉동 보관법',
+    icon: '🧅',
+    category: '채소',
+    cutTip: '대파 뿌리를 자르고 깨끗이 씻은 후 송송 썰어 키친타올로 물기를 제거합니다.',
+    keepTip: '지퍼백에 담아 냉동실에 보관하면 2~3달 동안 싱싱하게 쓸 수 있습니다.'
   },
   {
-    id: 'stage2',
-    level: '중 (중급자)',
-    levelNum: 2,
-    title: '🔥 2단계: 적벽대전 (The Battle of Red Cliffs)',
-    bossName: '조조 (80만 위나라 대군)',
-    icon: '🔥',
-    color: '#f97316',
-    aiDifficulty: 'medium', // 중급자 AI
-    briefing: `208년, 장강 삼백 리를 가득 메운 조조의 80만 대군!\n\n동풍이 불어오는 적벽의 강상 위에서 삼국의 운명을 건 대혈전이 시작됩니다.\n조조와 정예 위나라 장수진(하후돈, 장료, 조인 등)은 기물 가치를 정밀히 타산하며 아군 킹을 압박할 것입니다.\n중급 전술 수읽기로 적벽의 승리를 쟁취하십시오!`,
-    aiFaction: {
-      name: '조위 대군 (曹魏)',
-      ruler: '조조',
-      pieces: {
-        king: { name: '조조 (King)', symbol: '♚', img: './assets/cao_cao.svg', pieceType: 'king', owner: 'ai' },
-        queen: { name: '사마의 (Queen)', symbol: '♛', img: './assets/sima_yi.svg', pieceType: 'queen', owner: 'ai' },
-        rook1: { name: '하후돈 (Rook)', symbol: '♜', img: './assets/xiahoudun.svg', pieceType: 'rook', owner: 'ai' },
-        rook2: { name: '조인 (Rook)', symbol: '♜', img: './assets/cao_ren.svg', pieceType: 'rook', owner: 'ai' },
-        bishop1: { name: '장료 (Bishop)', symbol: '♝', img: './assets/zhang_liao.svg', pieceType: 'bishop', owner: 'ai' },
-        bishop2: { name: '서황 (Bishop)', symbol: '♝', img: './assets/xu_huang.svg', pieceType: 'bishop', owner: 'ai' },
-        knight1: { name: '하후무 (Knight)', symbol: '♞', img: './assets/xiahou_mao.svg', pieceType: 'knight', owner: 'ai' },
-        knight2: { name: '위나라 기병 (Knight)', symbol: '♞', img: './assets/xian_ling.svg', pieceType: 'knight', owner: 'ai' },
-        pawn: { name: '위나라 선봉 (Pawn)', symbol: '♟', img: './assets/xian_ling.svg', pieceType: 'pawn', owner: 'ai' }
-      }
-    }
+    id: 'onion',
+    name: '양파 눈물 없이 써는 법 & 보관법',
+    icon: '🧅',
+    category: '채소',
+    cutTip: '양파를 썰기 전 찬물에 10분 담가두거나 윗부분 뿌리를 나중에 자르면 눈물이 안 납니다.',
+    keepTip: '껍질을 깐 양파는 랩으로 감싸 냉장 보관하면 갈변 없이 한 달간 보관 가능합니다.'
   },
   {
-    id: 'stage3',
-    level: '상 (상급자)',
-    levelNum: 3,
-    title: '⚔️ 3단계: 최후의 결전 (The Final Battle for Empire)',
-    bossName: '사마의 & 삼국 최정예 신승진',
-    icon: '⚔️',
-    color: '#dc2626',
-    aiDifficulty: 'hard', // 상급자 AI
-    briefing: `삼국 삼분의 난세를 마감하고 천하통일을 이룰 최후의 대결!\n\n천하무쌍 여포와 치밀한 묘수의 사마의가 결합한 최정예 신승 군단이 기다립니다.\n이 AI는 기물 보호, 최적 포지셔닝, 킹 체크메이트 압박을 가하는 상급 묘수를 구사합니다.\n당신의 최고 전술 지혜로 체크메이트를 거두어 천하를 평정하십시오!`,
-    aiFaction: {
-      name: '최종 신승군 (神將)',
-      ruler: '사마의',
-      pieces: {
-        king: { name: '사마의 (King)', symbol: '♚', img: './assets/sima_yi.svg', pieceType: 'king', owner: 'ai' },
-        queen: { name: '여포 (Queen)', symbol: '♛', img: './assets/lu_bu.svg', pieceType: 'queen', owner: 'ai' },
-        rook1: { name: '관우 (Rook)', symbol: '♜', img: './assets/guan_yu.svg', pieceType: 'rook', owner: 'ai' },
-        rook2: { name: '장료 (Rook)', symbol: '♜', img: './assets/zhang_liao.svg', pieceType: 'rook', owner: 'ai' },
-        bishop1: { name: '제갈량 (Bishop)', symbol: '♝', img: './assets/zhuge_liang.svg', pieceType: 'bishop', owner: 'ai' },
-        bishop2: { name: '주유 (Bishop)', symbol: '♝', img: './assets/zhou_yu.svg', pieceType: 'bishop', owner: 'ai' },
-        knight1: { name: '조운 (Knight)', symbol: '♞', img: './assets/zhao_yun.svg', pieceType: 'knight', owner: 'ai' },
-        knight2: { name: '태사자 (Knight)', symbol: '♞', img: './assets/taishici.svg', pieceType: 'knight', owner: 'ai' },
-        pawn: { name: '최정예 친위대 (Pawn)', symbol: '♟', img: './assets/ganning.svg', pieceType: 'pawn', owner: 'ai' }
-      }
-    }
+    id: 'egg',
+    name: '계란 신선도 확인 & 노른자 분리',
+    icon: '🥚',
+    category: '유제품',
+    cutTip: '찬물에 담갔을 때 바닥에 얌전히 누우면 신선한 계란! 떠오르면 오래된 계란입니다.',
+    keepTip: '계란 뾰족한 부분이 아래로 가도록 란각에 세워 냉장 보관하세요.'
+  },
+  {
+    id: 'meat',
+    name: '돼지고기/소고기 잡내 잡는 법',
+    icon: '🥩',
+    category: '육류',
+    cutTip: '조리 전 키친타올로 핏물을 꾹꾹 눌러 제거하면 누린내의 90%가 잡힙니다.',
+    keepTip: '소분하여 올리브유를 겉면에 살짝 바른 뒤 랩으로 꽁꽁 싸서 냉동 보관하세요.'
+  },
+  {
+    id: 'garlic',
+    name: '다진 마늘 갈변 방지 보관법',
+    icon: '🧄',
+    category: '양념',
+    cutTip: '다진 마늘에 식용유 한 방울과 설탕 약간을 섞어 지퍼백에 얇게 편 뒤 칼등으로 네모 금을 만듭니다.',
+    keepTip: '냉동실에 넣었다가 필요할 때 1조각씩 쏙쏙 꺼내 쓰면 갈변 없이 편리합니다.'
   }
 ];
 
-const CHESS_FACTIONS = {
-  shu: {
-    id: 'shu',
-    name: '촉한 (蜀漢)',
-    ruler: '유비',
-    color: '#059669',
-    lightColor: '#34d399',
-    symbolColor: '#10b981',
-    pieces: {
-      king: { name: '유비 (King)', symbol: '♚', img: './assets/liu_shan.svg', fallbackImg: './assets/guan_yu.svg', desc: '군주: 촉한의 대덕 영주' },
-      queen: { name: '제갈량 (Queen)', symbol: '♛', img: './assets/zhuge_liang.svg', desc: '군사: 와룡 제갈공명' },
-      rook1: { name: '관우 (Rook)', symbol: '♜', img: './assets/guan_yu.svg', desc: '무성 관운장' },
-      rook2: { name: '장비 (Rook)', symbol: '♜', img: './assets/zhang_fei.svg', desc: '장판교 장익덕' },
-      bishop1: { name: '황충 (Bishop)', symbol: '♝', img: './assets/huang_zhong.svg', desc: '노익장 황충' },
-      bishop2: { name: '위연 (Bishop)', symbol: '♝', img: './assets/wei_yan.svg', desc: '자오곡 위연' },
-      knight1: { name: '조운 (Knight)', symbol: '♞', img: './assets/zhao_yun.svg', desc: '상산 조자룡' },
-      knight2: { name: '엄안 (Knight)', symbol: '♞', img: './assets/yan_yan.svg', desc: '파주 노장 엄안' },
-      pawn: { name: '촉나라 보병 (Pawn)', symbol: '♟', img: './assets/mou_zhang.svg', desc: '촉나라 정예 보병' }
-    }
+const RECIPES = [
+  // 한식
+  {
+    id: 'kimchi_jjigae',
+    category: 'korean',
+    name: '돼지고기 김치찌개',
+    level: '★☆☆ (초간단)',
+    time: '20분',
+    servings: '2인분',
+    img: './assets/kimchi_jjigae.svg',
+    icon: '🍲',
+    desc: '푹 익은 신김치와 고소한 돼지고기가 듬뿍 들어간 국민 김치찌개!',
+    spoonTip: '신김치 1공기 + 돼지고기 150g + 고춧가루 1스푼 + 국간장 1스푼 + 다진마늘 1/2스푼',
+    ingredients: ['신김치 1공기', '돼지고기(찌개용) 150g', '대파 1/2대', '두부 1/2모', '고춧가루 1큰술', '국간장 1큰술', '다진 마늘 0.5큰술'],
+    steps: [
+      { step: 1, text: '냄비에 식용유 1스푼을 두르고 돼지고기를 겉면이 익을 때까지 볶아줍니다.', timer: 180 },
+      { step: 2, text: '신김치와 고춧가루 1스푼을 넣고 김치가 나른해질 때까지 3분간 함께 볶습니다.', timer: 180 },
+      { step: 3, text: '물 3컵(종이컵 기준)을 붓고 국간장 1스푼, 다진 마늘 0.5스푼을 넣어 보글보글 끓입니다.', timer: 300 },
+      { step: 4, text: '마지막으로 두부와 썰어둔 대파를 넣고 2분간 더 끓여주면 완성!' }
+    ]
   },
-  wei: {
-    id: 'wei',
-    name: '조위 (曹魏)',
-    ruler: '조조',
-    color: '#2563eb',
-    lightColor: '#60a5fa',
-    symbolColor: '#3b82f6',
-    pieces: {
-      king: { name: '조조 (King)', symbol: '♚', img: './assets/cao_cao.svg', desc: '군주: 위무제 조맹덕' },
-      queen: { name: '사마의 (Queen)', symbol: '♛', img: './assets/sima_yi.svg', desc: '군사: 총호 사마중달' },
-      rook1: { name: '하후돈 (Rook)', symbol: '♜', img: './assets/xiahoudun.svg', desc: '맹장 하후돈' },
-      rook2: { name: '조인 (Rook)', symbol: '♜', img: './assets/cao_ren.svg', desc: '철벽 조인' },
-      bishop1: { name: '장료 (Bishop)', symbol: '♝', img: './assets/zhang_liao.svg', desc: '료래료래 장료' },
-      bishop2: { name: '서황 (Bishop)', symbol: '♝', img: './assets/xu_huang.svg', desc: '대도 서황' },
-      knight1: { name: '하후무 (Knight)', symbol: '♞', img: './assets/xiahou_mao.svg', desc: '위나라 기병' },
-      knight2: { name: '수성 군관 (Knight)', symbol: '♞', img: './assets/xian_ling.svg', desc: '위나라 기병' },
-      pawn: { name: '위나라 기병 (Pawn)', symbol: '♟', img: './assets/xian_ling.svg', desc: '위나라 선봉 기병' }
-    }
+  {
+    id: 'doenjang_jjigae',
+    category: 'korean',
+    name: '차돌 구수한 된장찌개',
+    level: '★☆☆ (초간단)',
+    time: '15분',
+    servings: '2인분',
+    img: './assets/doenjang_jjigae.svg',
+    icon: '🥘',
+    desc: '차돌박이의 고소한 기름과 된장의 구수함이 조화로운 식당 스타일 된장찌개',
+    spoonTip: '된장 2스푼 + 고추장 0.5스푼 + 다진마늘 0.5스푼 + 쌈장 0.5스푼(치트키!)',
+    ingredients: ['차돌박이 100g', '된장 2큰술', '쌈장 0.5큰술', '애호박 1/3개', '두부 1/2모', '팽이버섯 1/2봉', '청양고추 1개'],
+    steps: [
+      { step: 1, text: '뚝배기에 차돌박이를 넣고 고기 기름이 나올 때까지 볶아줍니다.' },
+      { step: 2, text: '물 2.5컵을 붓고 된장 2스푼과 쌈장 0.5스푼을 풀어 넣습니다.' },
+      { step: 3, text: '썰어둔 애호박, 두부, 청양고추를 넣고 5분간 강불로 끓여줍니다.', timer: 300 },
+      { step: 4, text: '팽이버섯을 올리고 불을 끄면 완벽한 된장찌개 완성!' }
+    ]
   },
-  wu: {
-    id: 'wu',
-    name: '손오 (孫吳)',
-    ruler: '손권',
-    color: '#dc2626',
-    lightColor: '#f87171',
-    symbolColor: '#ef4444',
-    pieces: {
-      king: { name: '손권 (King)', symbol: '♚', img: './assets/zhou_yu.svg', fallbackImg: './assets/zhou_yu.svg', desc: '군주: 강동의 군주 손권' },
-      queen: { name: '주유 (Queen)', symbol: '♛', img: './assets/zhou_yu.svg', desc: '군사: 미주랑 주유' },
-      rook1: { name: '태사자 (Rook)', symbol: '♜', img: './assets/taishici.svg', desc: '활신 태사자' },
-      rook2: { name: '감녕 (Rook)', symbol: '♜', img: './assets/ganning.svg', desc: '흥패 감녕' },
-      bishop1: { name: '육손 (Bishop)', symbol: '♝', img: './assets/lu_xun.svg', desc: '화신 육손' },
-      bishop2: { name: '맹획 (Bishop)', symbol: '♝', img: './assets/meng_huo.svg', desc: '남만왕 맹획' },
-      knight1: { name: '주태 (Knight)', symbol: '♞', img: './assets/zhutai.svg', desc: '불사신 주태' },
-      knight2: { name: '강동 수군 (Knight)', symbol: '♞', img: './assets/ganning.svg', desc: '오나라 수군' },
-      pawn: { name: '오나라 수군 (Pawn)', symbol: '♟', img: './assets/ganning.svg', desc: '오나라 수군 선봉대' }
-    }
+  {
+    id: 'jeyuk',
+    category: 'korean',
+    name: '매콤달콤 제육볶음',
+    level: '★★☆ (보통)',
+    time: '20분',
+    servings: '2인분',
+    img: './assets/jeyuk.svg',
+    icon: '🥩',
+    desc: '밥도둑 대명사! 불향 솔솔 나는 초간단 제육볶음',
+    spoonTip: '고추장 2스푼 + 고춧가루 2스푼 + 진간장 2스푼 + 설탕 2스푼 + 다진마늘 1스푼',
+    ingredients: ['돼지 불고깃감 300g', '양파 1/2개', '대파 1대', '고추장 2큰술', '고춧가루 2큰술', '진간장 2큰술', '설탕 2큰술'],
+    steps: [
+      { step: 1, text: '볼에 고기와 양념 재료(고추장, 고춧가루, 간장, 설탕, 다진마늘)를 넣고 조물조물 재워둡니다.' },
+      { step: 2, text: '달군 팬에 식용유를 약간 두르고 양념한 고기를 중강불에서 볶아줍니다.', timer: 240 },
+      { step: 3, text: '고기가 80% 익으면 채 썬 양파와 대파를 넣고 강불로 수분을 날리며 볶습니다.' },
+      { step: 4, text: '참기름 1스푼과 통깨를 솔솔 뿌려 마무리!' }
+    ]
+  },
+  {
+    id: 'egg_roll',
+    category: 'korean',
+    name: '폭신폭신 초간단 계란말이',
+    level: '★☆☆ (초간단)',
+    time: '10분',
+    servings: '2인분',
+    img: './assets/egg_roll.svg',
+    icon: '🍳',
+    desc: '실패 없는 초보자용 부드러운 통계란말이',
+    spoonTip: '계란 4개 + 소금 0.3티스푼 + 설탕 0.5스푼 + 맛술 1스푼(비린내 제거!)',
+    ingredients: ['계란 4개', '대파 약간', '당근 약간', '소금 약간', '설탕 0.5스푼'],
+    steps: [
+      { step: 1, text: '볼에 계란 4개를 깨트리고 소금, 설탕, 알끈을 잘 풀어 섞어줍니다.' },
+      { step: 2, text: '다진 대파와 당근을 넣어 섞은 후, 약불로 달군 팬에 계란물 1/3을 부어줍니다.' },
+      { step: 3, text: '계란이 살짝 익으면 끝에서부터 살살 말아주고, 남은 계란물을 이어 부으며 크게 맙니다.' },
+      { step: 4, text: '한 김 식힌 후 칼로 예쁘게 썰어 케첩과 함께 냅니다!' }
+    ]
+  },
+
+  // 중식
+  {
+    id: 'mapo_tofu',
+    category: 'chinese',
+    name: '초간단 마파두부',
+    level: '★☆☆ (초간단)',
+    time: '15분',
+    servings: '2인분',
+    img: './assets/mapo_tofu.svg',
+    icon: '🍲',
+    desc: '두부와 고추장 굴소스의 만남! 밥에 쓱쓱 비벼 먹는 중화풍 덮밥',
+    spoonTip: '고추장 1스푼 + 굴소스 1.5스푼 + 고춧가루 1스푼 + 전분물(전분1:물2)',
+    ingredients: ['두부 1모', '돼지고기 다짐육 100g', '고추장 1큰술', '굴소스 1.5큰술', '다진 마늘 1큰술', '전분가루 1큰술'],
+    steps: [
+      { step: 1, text: '두부는 깍둑썰기하고, 대파와 마늘을 기름에 볶아 향을 냅니다.' },
+      { step: 2, text: '다짐육을 넣고 볶다가 고추장 1스푼, 굴소스 1.5스푼, 고춧가루 1스푼을 넣습니다.' },
+      { step: 3, text: '물 1컵을 붓고 끓으면 두부를 넣고 2분간 조립니다.', timer: 120 },
+      { step: 4, text: '전분물을 조금씩 둘러 걸쭉하게 농도를 맞추면 완성!' }
+    ]
+  },
+  {
+    id: 'fried_rice',
+    category: 'chinese',
+    name: '고슬고슬 중국집 계란볶음밥',
+    level: '★☆☆ (초간단)',
+    time: '10분',
+    servings: '1인분',
+    img: './assets/fried_rice.svg',
+    icon: '🍚',
+    desc: '굴소스와 대파 기름으로 만드는 중국집 스타일 볶음밥',
+    spoonTip: '밥 1공기 + 계란 2개 + 굴소스 1스푼 + 대파 1/2대 + 진간장 0.5스푼',
+    ingredients: ['찬밥 1공기', '계란 2개', '대파 1/2대', '굴소스 1큰술', '진간장 0.5큰술', '식용유 2큰술'],
+    steps: [
+      { step: 1, text: '팬에 식용유 2스푼과 쌘 대파를 넣고 강불에서 파기름을 냅니다.' },
+      { step: 2, text: '파를 한쪽으로 밀고 계란 2개를 스크램블하여 구워줍니다.' },
+      { step: 3, text: '팬 바닥에 간장 0.5스푼을 태우듯 눌려 풍미를 더한 후 밥과 굴소스를 넣습니다.' },
+      { step: 4, text: '주걱 세워 밥알을 털어내듯 강불에 볶아내면 완벽한 볶음밥!' }
+    ]
+  },
+
+  // 일식
+  {
+    id: 'gyudon',
+    category: 'japanese',
+    name: '달콤 짭조름 단짠 규동',
+    level: '★☆☆ (초간단)',
+    time: '12분',
+    servings: '1인분',
+    img: './assets/gyudon.svg',
+    icon: '🍲',
+    desc: '우삼겹이나 불고기용 고기로 뚝딱 만드는 소고기 덮밥',
+    spoonTip: '물 1/2컵 + 쯔유(또는 간장) 2스푼 + 설탕 1스푼 + 맛술 1스푼',
+    ingredients: ['우삼겹(또는 양지) 150g', '양파 1/2개', '계란 1개', '간장 2큰술', '설탕 1큰술', '맛술 1큰술'],
+    steps: [
+      { step: 1, text: '냄비에 물 1/2컵, 간장 2스푼, 설탕 1스푼, 맛술 1스푼, 채 썬 양파를 넣고 끓입니다.' },
+      { step: 2, text: '양파가 투명해지면 소고기를 하나씩 떼어 넣고 익혀줍니다.' },
+      { step: 3, text: '고기가 익으면 계란을 살짝 풀어 위에 두르고 불을 끕니다.' },
+      { step: 4, text: '따뜻한 밥 위에 국물과 함께 얹어내면 전문점 규동 완성!' }
+    ]
+  },
+
+  // 양식
+  {
+    id: 'pasta',
+    category: 'western',
+    name: '꾸덕한 매콤 투움바 파스타',
+    level: '★★☆ (보통)',
+    time: '18분',
+    servings: '1~2인분',
+    img: './assets/pasta.svg',
+    icon: '🍝',
+    desc: '아웃백 부럽지 않은 고소하고 매콤한 크림 파스타',
+    spoonTip: '생크림(또는 우유) 1컵 + 굴소스 1스푼 + 고춧가루 1스푼 + 다진마늘 1스푼',
+    ingredients: ['파스타면 100g', '새우 6마리', '우유 1.5컵', '체다치즈 1장', '고춧가루 1큰술', '굴소스 1큰술'],
+    steps: [
+      { step: 1, text: '끓는 물에 소금 0.5스푼을 넣고 파스타면을 7분간 삶아 건져둡니다.', timer: 420 },
+      { step: 2, text: '팬에 올리브유를 두르고 마늘과 새우를 볶다가 고춧가루 1스푼을 넣습니다.' },
+      { step: 3, text: '우유 1.5컵과 굴소스 1스푼, 체다치즈 1장을 넣고 끓여 크림 소스를 만듭니다.' },
+      { step: 4, text: '삶은 면을 넣고 소스가 꾸덕해질 때까지 2분간 자작하게 조려줍니다.' }
+    ]
+  },
+  {
+    id: 'gambas',
+    category: 'western',
+    name: '마늘 풍미 감바스 알 아히요',
+    level: '★☆☆ (초간단)',
+    time: '12분',
+    servings: '2인분',
+    img: './assets/gambas.svg',
+    icon: '🍤',
+    desc: '바게트 빵에 기름 찍어 먹는 근사한 홈파티 대표 메뉴',
+    spoonTip: '올리브유 1/2컵 + 편마늘 10알 + 페퍼론치노 5개 + 소금 0.3스푼 + 허브가루',
+    ingredients: ['자숙 새우 10~12마리', '통마늘 10알', '올리브유 1/2컵', '페퍼론치노 5개', '바게트 빵'],
+    steps: [
+      { step: 1, text: '마늘은 편으로 썰고 새우는 키친타올로 물기를 완전히 제거합니다.' },
+      { step: 2, text: '팬에 올리브유 1/2컵과 편마늘을 넣고 약불에서 마늘 향을 노릇하게 냅니다.' },
+      { step: 3, text: '페퍼론치노와 새우, 소금 0.3스푼을 넣고 중불에서 3분간 끓입니다.', timer: 180 },
+      { step: 4, text: '구운 바게트 빵을 곁들여 와인이나 맥주와 함께 즐깁니다!' }
+    ]
+  },
+
+  // 분식
+  {
+    id: 'tteokbokki',
+    category: 'snack',
+    name: '추억의 학교 앞 국물 떡볶이',
+    level: '★☆☆ (초간단)',
+    time: '15분',
+    servings: '2인분',
+    img: './assets/tteokbokki.svg',
+    icon: '🥘',
+    desc: '매콤달콤 황금 비율 양념으로 만든 자취생 원픽 떡볶이',
+    spoonTip: '고추장 2스푼 + 진간장 1.5스푼 + 설탕 2.5스푼 + 고춧가루 1스푼 + 카레가루 0.5스푼(치트키!)',
+    ingredients: ['떡볶이 떡 2공기', '사각 어묵 2장', '대파 1대', '고추장 2큰술', '설탕 2.5큰술', '카레가루 0.5큰술'],
+    steps: [
+      { step: 1, text: '냄비에 물 2.5컵을 붓고 고추장 2스푼, 설탕 2.5스푼, 간장 1.5스푼, 카레가루 0.5스푼을 풉니다.' },
+      { step: 2, text: '국물이 끓어오르면 씻어둔 떡과 먹기 좋게 썬 어묵을 넣습니다.' },
+      { step: 3, text: '떡이 부풀어 오르고 양념이 배어들 때까지 중불에서 5분간 끓입니다.', timer: 300 },
+      { step: 4, text: '송송 썬 대파를 듬뿍 넣고 국물이 자작해지면 완벽 완성!' }
+    ]
+  },
+
+  // 스페셜
+  {
+    id: 'spam_mayo',
+    category: 'special',
+    name: '단짠 단짠 스팸마요 덮밥',
+    level: '★☆☆ (초간단)',
+    time: '10분',
+    servings: '1인분',
+    img: './assets/spam_mayo.svg',
+    icon: '🍱',
+    desc: '반찬 없을 때 10분 만에 뚝딱 만드는 덮밥 최강자',
+    spoonTip: '스팸 1/2캔 + 계란 2개 + 마요네즈 듬뿍 + 데리야끼 소스 (간장2+설탕1+맛술1)',
+    ingredients: ['스팸 1/2캔', '계란 2개', '밥 1공기', '마요네즈 2큰술', '진간장 2큰술', '설탕 1큰술'],
+    steps: [
+      { step: 1, text: '스팸은 작은 깍둑썰기하여 팬에 노릇노릇하게 볶아줍니다.' },
+      { step: 2, text: '계란 2개는 소금 약간 넣고 부드러운 스크램블 에그를 만듭니다.' },
+      { step: 3, text: '팬에 간장 2스푼, 설탕 1스푼, 물 2스푼을 넣고 살짝 조려 데리야끼 소스를 만듭니다.' },
+      { step: 4, text: '밥 위에 스크램블, 볶은 스팸, 소스를 얹고 마요네즈를 지그재그로 예쁘게 뿌립니다!' }
+    ]
   }
-};
+];

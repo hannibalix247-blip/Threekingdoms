@@ -1,593 +1,248 @@
-// 삼국지 영웅전 : 8x8 정통 체스 엔진 (캠페인 카드 클릭 및 브리핑 모달 전환 완벽 보장)
-import { 
-  loginWithGoogle, 
-  loginAsGuest, 
-  logoutUser, 
-  listenAuthState, 
-  saveGameToCloud, 
-  loadGameFromCloud 
-} from "./firebase-config.js";
+// 요리왕, 기몌진 메인 애플리케이션 엔진
 
-let currentUser = null;
+let currentCategory = 'all';
+let currentTab = 'recipes';
+let activeTimer = null;
 
-let gameState = {
-  playerFactionId: 'shu',
-  currentCampaign: STORY_CAMPAIGNS[0],
-  
-  board: Array(8).fill(null).map(() => Array(8).fill(null)),
-  
-  selectedPos: null,
-  validMoves: [],
-  validAttacks: [],
-  
-  isPlayerTurn: true,
-  isCheck: false,
-  isGameOver: false,
-
-  playerCaptured: [],
-  aiCaptured: []
-};
-
-window.pickPlayerFaction = pickPlayerFaction;
-window.showStoryBriefingById = showStoryBriefingById;
-window.startCampaignBattle = startCampaignBattle;
-window.restartGame = restartGame;
+window.filterCategory = filterCategory;
+window.switchMainTab = switchMainTab;
+window.openFridgeModal = openFridgeModal;
 window.closeModal = closeModal;
+window.openRecipeDetail = openRecipeDetail;
+window.findFridgeRecipes = findFridgeRecipes;
+window.startRecipeTimer = startRecipeTimer;
 
 document.addEventListener('DOMContentLoaded', () => {
-  renderCampaignCards();
-
-  document.getElementById('btnRestart').addEventListener('click', () => {
-    document.getElementById('titleScreen').classList.remove('hidden');
-  });
-
-  const btnStart = document.getElementById('btnStartBattle');
-  if (btnStart) {
-    btnStart.addEventListener('click', startCampaignBattle);
-  }
-
-  document.getElementById('btnSaveGame').addEventListener('click', handleSaveGame);
-  document.getElementById('btnLoadGame').addEventListener('click', handleLoadGame);
-
-  listenAuthState((user) => {
-    if (user) currentUser = user;
-    else handleGuestLogin();
-  });
+  renderRecipes();
+  renderTips();
+  initFridgeChecklist();
 });
 
-async function handleGuestLogin() {
-  const user = await loginAsGuest();
-  currentUser = user;
+function switchMainTab(tabName) {
+  currentTab = tabName;
+
+  document.getElementById('btnTabRecipes').classList.toggle('active', tabName === 'recipes');
+  document.getElementById('btnTabTips').classList.toggle('active', tabName === 'tips');
+
+  document.getElementById('recipesMainView').style.display = tabName === 'recipes' ? 'block' : 'none';
+  document.getElementById('categorySection').style.display = tabName === 'recipes' ? 'block' : 'none';
+  document.getElementById('tipsMainView').style.display = tabName === 'tips' ? 'block' : 'none';
 }
 
-async function handleSaveGame() {
-  const saveData = {
-    playerFactionId: gameState.playerFactionId,
-    campaignId: gameState.currentCampaign.id,
-    board: gameState.board,
-    playerCaptured: gameState.playerCaptured,
-    aiCaptured: gameState.aiCaptured,
-    isPlayerTurn: gameState.isPlayerTurn
-  };
+function filterCategory(catId) {
+  currentCategory = catId;
 
-  const userId = currentUser ? currentUser.uid : 'guest';
-  const result = await saveGameToCloud(userId, saveData);
-
-  if (result.success) {
-    soundManager.playVictory();
-    alert("💾 체스 스토리 캠페인 상황이 성공적으로 저장되었습니다!");
-  }
-}
-
-async function handleLoadGame() {
-  const userId = currentUser ? currentUser.uid : 'guest';
-  const data = await loadGameFromCloud(userId);
-
-  if (!data) {
-    alert("저장된 게임 데이터가 없습니다.");
-    return;
-  }
-
-  gameState.playerFactionId = data.playerFactionId || 'shu';
-  const stage = STORY_CAMPAIGNS.find(s => s.id === data.campaignId) || STORY_CAMPAIGNS[0];
-  gameState.currentCampaign = stage;
-
-  gameState.board = data.board;
-  gameState.playerCaptured = data.playerCaptured || [];
-  gameState.aiCaptured = data.aiCaptured || [];
-  gameState.isPlayerTurn = data.isPlayerTurn !== undefined ? data.isPlayerTurn : true;
-
-  document.getElementById('titleScreen').classList.add('hidden');
-  updateFactionInfo();
-  renderBoard();
-  updateCapturedUI();
-
-  soundManager.playVictory();
-  alert("📂 저장된 체스 스토리 캠페인을 불러왔습니다!");
-}
-
-function pickPlayerFaction(factionId) {
-  gameState.playerFactionId = factionId;
-
-  ['Shu', 'Wei', 'Wu'].forEach(f => {
-    const btn = document.getElementById(`btnFaction${f}`);
-    if (btn) btn.classList.remove('active');
+  document.querySelectorAll('.category-card').forEach(card => {
+    card.classList.remove('active');
   });
+  const activeCard = document.getElementById(`cat_${catId}`);
+  if (activeCard) activeCard.classList.add('active');
 
-  const selectedBtn = document.getElementById(`btnFaction${factionId.charAt(0).toUpperCase() + factionId.slice(1)}`);
-  if (selectedBtn) selectedBtn.classList.add('active');
+  const catObj = CATEGORIES.find(c => c.id === catId);
+  document.getElementById('currentCategoryLabel').textContent = catObj ? `${catObj.name} 레시피` : '전체 추천 레시피';
+
+  renderRecipes();
 }
 
-function renderCampaignCards() {
-  const container = document.getElementById('campaignCardList');
+function renderRecipes(recipesToRender = null) {
+  const container = document.getElementById('recipeGridList');
   if (!container) return;
   container.innerHTML = '';
 
-  STORY_CAMPAIGNS.forEach(stage => {
+  const list = recipesToRender || RECIPES.filter(r => currentCategory === 'all' || r.category === currentCategory);
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #64748b;">
+        <div style="font-size: 3rem; margin-bottom: 10px;">🍳</div>
+        <div>해당 재료로 만들 수 있는 레시피를 찾는 중입니다!</div>
+      </div>
+    `;
+    return;
+  }
+
+  list.forEach(r => {
     const card = document.createElement('div');
-    card.style.cssText = `
-      background: linear-gradient(145deg, #1e293b, #0f172a);
-      border: 2px solid ${stage.color};
-      border-radius: 14px;
-      padding: 18px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-    `;
-
+    card.className = 'recipe-card';
     card.innerHTML = `
-      <div style="font-size: 2.8rem;">${stage.icon}</div>
-      <div style="font-size: 1.15rem; font-weight: 900; color: #fff;">${stage.title}</div>
-      <div style="font-size: 0.85rem; color: var(--gold-light); font-weight: 700;">난이도: ${stage.level}</div>
-      <div style="font-size: 0.8rem; color: #cbd5e1; text-align: center;">${stage.bossName}</div>
-      <button class="header-btn" style="margin-top: 8px; width: 100%; background: ${stage.color}; font-weight: 900; pointer-events: none;">📜 도전 & 브리핑 보기</button>
+      <div class="recipe-img-box">
+        <img class="recipe-img" src="${r.img}" alt="${r.name}">
+        <span class="recipe-badge-level">${r.level}</span>
+      </div>
+      <div class="recipe-info-body">
+        <div class="recipe-title">${r.icon} ${r.name}</div>
+        <div class="recipe-desc">${r.desc}</div>
+        <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 12px;">
+          ⏱️ 조리시간: <b>${r.time}</b> | 👨‍👩‍👧 ${r.servings}
+        </div>
+        <div class="spoon-cheat-box">
+          🥄 밥숟가락 계량 팁: ${r.spoonTip.split('+')[0]}...
+        </div>
+      </div>
     `;
 
-    card.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showStoryBriefingById(stage.id);
-    });
-
+    card.onclick = () => openRecipeDetail(r);
     container.appendChild(card);
   });
 }
 
-function showStoryBriefingById(stageId) {
-  const stage = STORY_CAMPAIGNS.find(s => s.id === stageId) || STORY_CAMPAIGNS[0];
-  gameState.currentCampaign = stage;
+function renderTips() {
+  const container = document.getElementById('ingredientTipsGrid');
+  if (!container) return;
+  container.innerHTML = '';
 
-  document.getElementById('briefingIcon').textContent = stage.icon;
-  document.getElementById('briefingTitle').textContent = stage.title;
-  document.getElementById('briefingContent').textContent = stage.briefing;
+  INGREDIENT_TIPS.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'tip-card';
+    card.innerHTML = `
+      <div class="tip-card-header">
+        <div class="tip-icon-box">${t.icon}</div>
+        <div>
+          <div class="tip-title">${t.name}</div>
+          <span style="font-size: 0.78rem; background: #e2e8f0; padding: 2px 8px; border-radius: 12px; color: #475569;">${t.category}</span>
+        </div>
+      </div>
 
-  document.getElementById('modalStoryBriefing').classList.add('active');
-}
+      <div class="tip-content-block">
+        <strong style="color: #c2410c;">✂️ 손질 & 썰기 꿀팁:</strong><br>
+        ${t.cutTip}
+      </div>
 
-function startCampaignBattle() {
-  closeModal('modalStoryBriefing');
-  document.getElementById('titleScreen').classList.add('hidden');
-  soundManager.playDrum();
-  initBoard();
-}
-
-function restartGame() {
-  document.getElementById('modalResult').classList.remove('active');
-  document.getElementById('titleScreen').classList.remove('hidden');
-}
-
-function updateFactionInfo() {
-  const pFact = CHESS_FACTIONS[gameState.playerFactionId];
-  const aFact = gameState.currentCampaign.aiFaction;
-
-  document.getElementById('playerFactionName').textContent = `아군 (${pFact.name})`;
-  document.getElementById('playerKingName').textContent = `킹: ${pFact.pieces.king.name.split(' ')[0]} | 퀸: ${pFact.pieces.queen.name.split(' ')[0]}`;
-  document.getElementById('playerFactionIcon').textContent = gameState.playerFactionId === 'shu' ? '🍃' : (gameState.playerFactionId === 'wei' ? '🐉' : '🔥');
-
-  document.getElementById('aiFactionName').textContent = `컴퓨터 AI (${aFact.name})`;
-  document.getElementById('aiKingName').textContent = `킹: ${aFact.ruler} | 난이도: ${gameState.currentCampaign.level}`;
-  document.getElementById('aiFactionIcon').textContent = gameState.currentCampaign.icon;
-
-  document.getElementById('headerTitle').textContent = `삼국지 체스 : ${gameState.currentCampaign.title.split(':')[1] || gameState.currentCampaign.title}`;
-}
-
-// -------------------------------------------------------------
-// ♟️ 8x8 체스판 초기화 (Standard Chess Board Setup)
-// -------------------------------------------------------------
-function initBoard() {
-  gameState.board = Array(8).fill(null).map(() => Array(8).fill(null));
-  gameState.playerCaptured = [];
-  gameState.aiCaptured = [];
-  gameState.selectedPos = null;
-  gameState.validMoves = [];
-  gameState.validAttacks = [];
-  gameState.isPlayerTurn = true;
-  gameState.isGameOver = false;
-
-  updateFactionInfo();
-
-  const pFact = CHESS_FACTIONS[gameState.playerFactionId];
-  const aFact = gameState.currentCampaign.aiFaction;
-
-  // AI 기물 배치
-  const mainOrder = ['rook1', 'knight1', 'bishop1', 'queen', 'king', 'bishop2', 'knight2', 'rook2'];
-  for (let c = 0; c < 8; c++) {
-    const key = mainOrder[c];
-    const pType = key.replace(/[0-9]/g, '');
-    gameState.board[0][c] = { ...aFact.pieces[key], pieceType: pType, owner: 'ai' };
-    gameState.board[1][c] = { ...aFact.pieces.pawn, pieceType: 'pawn', owner: 'ai' };
-  }
-
-  // 플레이어 기물 배치
-  for (let c = 0; c < 8; c++) {
-    const key = mainOrder[c];
-    const pType = key.replace(/[0-9]/g, '');
-    gameState.board[7][c] = { ...pFact.pieces[key], pieceType: pType, owner: 'player' };
-    gameState.board[6][c] = { ...pFact.pieces.pawn, pieceType: 'pawn', owner: 'player' };
-  }
-
-  renderBoard();
-  updateCapturedUI();
-  logChess(`♟️ ${gameState.currentCampaign.title} 대결 시작! [${pFact.name}] VS [${aFact.name}]`);
-}
-
-// -------------------------------------------------------------
-// 🎨 3D 체스 피스 실루엣 SVG 외형 디자인 생성기
-// -------------------------------------------------------------
-function generateVisualPieceSVG(pieceType, isPlayer) {
-  const primaryColor = isPlayer ? '#f59e0b' : '#ef4444';
-  const strokeColor = isPlayer ? '#fef08a' : '#f87171';
-  const baseGradStart = isPlayer ? '#d97706' : '#991b1b';
-  const baseGradEnd = isPlayer ? '#451a03' : '#450a0a';
-
-  let pathData = '';
-
-  if (pieceType === 'king') {
-    pathData = `M 34,10 L 46,10 L 46,18 L 54,18 L 54,26 L 46,26 L 46,32 C 55,32 64,24 64,40 C 64,52 56,58 56,66 L 68,70 L 68,76 L 12,76 L 12,70 L 24,66 C 24,58 16,52 16,40 C 16,24 25,32 34,32 L 34,26 L 26,26 L 26,18 L 34,18 Z`;
-  } else if (pieceType === 'queen') {
-    pathData = `M 16,24 L 24,44 L 32,20 L 40,44 L 48,20 L 56,44 L 64,24 L 60,56 C 60,64 56,68 56,70 L 68,74 L 68,78 L 12,78 L 12,74 L 24,70 C 24,68 20,64 20,56 Z`;
-  } else if (pieceType === 'rook') {
-    pathData = `M 18,20 L 28,20 L 28,28 L 36,28 L 36,20 L 44,20 L 44,28 L 52,28 L 52,20 L 62,20 L 58,40 L 56,68 L 66,72 L 66,78 L 14,78 L 14,72 L 24,68 L 22,40 Z`;
-  } else if (pieceType === 'knight') {
-    pathData = `M 32,16 C 44,16 58,24 58,38 C 58,46 50,52 54,58 C 58,64 64,66 64,72 L 64,78 L 16,78 L 16,72 C 16,62 26,56 26,44 C 26,34 18,36 18,28 C 18,20 24,16 32,16 Z`;
-  } else if (pieceType === 'bishop') {
-    pathData = `M 40,12 C 43,12 45,14 45,17 C 45,20 43,22 40,22 C 37,22 35,20 35,17 C 35,14 37,12 40,12 Z M 40,24 C 52,24 60,38 56,56 C 56,64 58,68 58,72 L 66,74 L 66,78 L 14,78 L 14,74 L 22,72 C 22,68 24,64 24,56 C 20,38 28,24 40,24 Z`;
-  } else {
-    pathData = `M 40,18 C 48,18 54,24 54,32 C 54,38 48,42 46,46 L 50,62 L 60,68 L 60,76 L 20,76 L 20,68 L 30,62 L 34,46 C 32,42 26,38 26,32 C 26,24 32,18 40,18 Z`;
-  }
-
-  return `
-    <svg class="piece-svg-container" viewBox="0 0 80 85" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="grad_${pieceType}_${isPlayer}" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="${primaryColor}" />
-          <stop offset="50%" stop-color="${baseGradStart}" />
-          <stop offset="100%" stop-color="${baseGradEnd}" />
-        </linearGradient>
-      </defs>
-      <path d="${pathData}" fill="url(#grad_${pieceType}_${isPlayer})" stroke="${strokeColor}" stroke-width="2.5" stroke-linejoin="round"/>
-    </svg>
-  `;
-}
-
-function renderBoard() {
-  const boardEl = document.getElementById('chessBoard8x8');
-  if (!boardEl) return;
-  boardEl.innerHTML = '';
-
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      const square = document.createElement('div');
-      const isLight = (r + c) % 2 === 0;
-      square.className = `chess-square ${isLight ? 'square-light' : 'square-dark'}`;
-
-      if (gameState.selectedPos && gameState.selectedPos.r === r && gameState.selectedPos.c === c) {
-        square.classList.add('square-selected');
-      }
-
-      const isMovable = gameState.validMoves.some(m => m.r === r && m.c === c);
-      const isAttackable = gameState.validAttacks.some(a => a.r === r && a.c === c);
-
-      if (isMovable) square.classList.add('square-movable');
-      if (isAttackable) square.classList.add('square-attackable');
-
-      const piece = gameState.board[r][c];
-      if (piece) {
-        if (piece.pieceType === 'king' && gameState.isCheck && ((piece.owner === 'player' && gameState.isPlayerTurn) || (piece.owner === 'ai' && !gameState.isPlayerTurn))) {
-          square.classList.add('square-check');
-        }
-
-        const heroFirstName = piece.name.split(' ')[0];
-        const isPlayer = piece.owner === 'player';
-
-        const visualPiece = document.createElement('div');
-        visualPiece.className = 'chess-visual-piece';
-
-        const svgHTML = generateVisualPieceSVG(piece.pieceType, isPlayer);
-
-        visualPiece.innerHTML = `
-          ${svgHTML}
-          <img class="piece-portrait-inset" src="${piece.img}" alt="${piece.name}" onerror="this.src='${piece.fallbackImg || './assets/guan_yu.svg'}';">
-          <span class="piece-name-label">${heroFirstName}</span>
-        `;
-
-        square.appendChild(visualPiece);
-      }
-
-      square.addEventListener('click', () => onSquareClick(r, c));
-      boardEl.appendChild(square);
-    }
-  }
-}
-
-function onSquareClick(r, c) {
-  if (gameState.isGameOver || !gameState.isPlayerTurn) return;
-
-  const clickedPiece = gameState.board[r][c];
-
-  if (gameState.selectedPos) {
-    const isMovable = gameState.validMoves.some(m => m.r === r && m.c === c);
-    const isAttackable = gameState.validAttacks.some(a => a.r === r && a.c === c);
-
-    if (isMovable || isAttackable) {
-      makeMove(gameState.selectedPos.r, gameState.selectedPos.c, r, c);
-      return;
-    }
-  }
-
-  if (clickedPiece && clickedPiece.owner === 'player') {
-    gameState.selectedPos = { r, c };
-    calculateValidMoves(r, c, clickedPiece);
-    renderBoard();
-  } else {
-    gameState.selectedPos = null;
-    gameState.validMoves = [];
-    gameState.validAttacks = [];
-    renderBoard();
-  }
-}
-
-// -------------------------------------------------------------
-// ♟️ 정통 체스 기물 이동 알고리즘
-// -------------------------------------------------------------
-function calculateValidMoves(r, c, piece) {
-  gameState.validMoves = [];
-  gameState.validAttacks = [];
-
-  const type = piece.pieceType;
-  const isPlayer = piece.owner === 'player';
-
-  if (type === 'pawn') {
-    const dir = isPlayer ? -1 : 1;
-    const startRow = isPlayer ? 6 : 1;
-
-    if (r + dir >= 0 && r + dir < 8 && !gameState.board[r + dir][c]) {
-      gameState.validMoves.push({ r: r + dir, c });
-
-      if (r === startRow && !gameState.board[r + 2 * dir][c]) {
-        gameState.validMoves.push({ r: r + 2 * dir, c });
-      }
-    }
-
-    [c - 1, c + 1].forEach(nc => {
-      if (r + dir >= 0 && r + dir < 8 && nc >= 0 && nc < 8) {
-        const target = gameState.board[r + dir][nc];
-        if (target && target.owner !== piece.owner) {
-          gameState.validAttacks.push({ r: r + dir, c: nc });
-        }
-      }
-    });
-  } else if (type === 'knight') {
-    const knightMoves = [
-      [-2, -1], [-2, 1], [-1, -2], [-1, 2],
-      [1, -2], [1, 2], [2, -1], [2, 1]
-    ];
-    knightMoves.forEach(([dr, dc]) => {
-      const nr = r + dr;
-      const nc = c + dc;
-      if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-        const target = gameState.board[nr][nc];
-        if (!target) gameState.validMoves.push({ r: nr, c: nc });
-        else if (target.owner !== piece.owner) gameState.validAttacks.push({ r: nr, c: nc });
-      }
-    });
-  } else if (type === 'bishop' || type === 'rook' || type === 'queen') {
-    const dirs = [];
-    if (type === 'bishop' || type === 'queen') dirs.push([-1, -1], [-1, 1], [1, -1], [1, 1]);
-    if (type === 'rook' || type === 'queen') dirs.push([-1, 0], [1, 0], [0, -1], [0, 1]);
-
-    dirs.forEach(([dr, dc]) => {
-      for (let step = 1; step < 8; step++) {
-        const nr = r + dr * step;
-        const nc = c + dc * step;
-        if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-          const target = gameState.board[nr][nc];
-          if (!target) {
-            gameState.validMoves.push({ r: nr, c: nc });
-          } else {
-            if (target.owner !== piece.owner) gameState.validAttacks.push({ r: nr, c: nc });
-            break;
-          }
-        } else break;
-      }
-    });
-  } else if (type === 'king') {
-    const dirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
-    dirs.forEach(([dr, dc]) => {
-      const nr = r + dr;
-      const nc = c + dc;
-      if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-        const target = gameState.board[nr][nc];
-        if (!target) gameState.validMoves.push({ r: nr, c: nc });
-        else if (target.owner !== piece.owner) gameState.validAttacks.push({ r: nr, c: nc });
-      }
-    });
-  }
-}
-
-function makeMove(fromR, fromC, toR, toC) {
-  const movingPiece = gameState.board[fromR][fromC];
-  const targetPiece = gameState.board[toR][toC];
-
-  if (targetPiece) {
-    soundManager.playSwordClash();
-    if (movingPiece.owner === 'player') gameState.playerCaptured.push(targetPiece);
-    else gameState.aiCaptured.push(targetPiece);
-
-    logDuelAlert(`💥 [기물 잡기] ${movingPiece.name} 이(가) 상대 ${targetPiece.name}을(를) 체스판에서 격파했습니다!`);
-
-    if (targetPiece.pieceType === 'king') {
-      gameState.board[toR][toC] = movingPiece;
-      gameState.board[fromR][fromC] = null;
-      renderBoard();
-      updateCapturedUI();
-      handleGameOver(movingPiece.owner === 'player');
-      return;
-    }
-  } else {
-    soundManager.playDrum();
-  }
-
-  gameState.board[toR][toC] = movingPiece;
-  gameState.board[fromR][fromC] = null;
-
-  gameState.selectedPos = null;
-  gameState.validMoves = [];
-  gameState.validAttacks = [];
-
-  renderBoard();
-  updateCapturedUI();
-
-  if (gameState.isPlayerTurn) {
-    gameState.isPlayerTurn = false;
-    logChess(`--- 아군 턴 완료 -> 컴퓨터 AI 턴 ---`);
-    setTimeout(makeAiChessMove, 1000);
-  } else {
-    gameState.isPlayerTurn = true;
-    logChess(`--- 컴퓨터 AI 턴 완료 -> 아군 턴 ---`);
-  }
-}
-
-// -------------------------------------------------------------
-// 🤖 3단계 난이도별 지능형 체스 AI Engine (Easy, Medium, Hard)
-// -------------------------------------------------------------
-function makeAiChessMove() {
-  if (gameState.isGameOver) return;
-
-  const diff = gameState.currentCampaign.aiDifficulty;
-  const allAiMoves = [];
-
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      const piece = gameState.board[r][c];
-      if (piece && piece.owner === 'ai') {
-        calculateValidMoves(r, c, piece);
-
-        gameState.validAttacks.forEach(att => {
-          const target = gameState.board[att.r][att.c];
-          let score = 10;
-          if (target.pieceType === 'king') score = 1000;
-          else if (target.pieceType === 'queen') score = 90;
-          else if (target.pieceType === 'rook') score = 50;
-          else if (target.pieceType === 'bishop' || target.pieceType === 'knight') score = 30;
-
-          allAiMoves.push({ from: { r, c }, to: { r: att.r, c: att.c }, score });
-        });
-
-        gameState.validMoves.forEach(mv => {
-          let score = 1;
-          if (diff === 'hard') score += (mv.r * 2);
-          allAiMoves.push({ from: { r, c }, to: { r: mv.r, c: mv.c }, score });
-        });
-      }
-    }
-  }
-
-  if (allAiMoves.length > 0) {
-    let chosenMove;
-
-    if (diff === 'easy') {
-      if (Math.random() < 0.6) {
-        chosenMove = allAiMoves[Math.floor(Math.random() * allAiMoves.length)];
-      } else {
-        allAiMoves.sort((a, b) => b.score - a.score);
-        chosenMove = allAiMoves[0];
-      }
-    } else if (diff === 'medium') {
-      if (Math.random() < 0.2) {
-        chosenMove = allAiMoves[Math.floor(Math.random() * allAiMoves.length)];
-      } else {
-        allAiMoves.sort((a, b) => b.score - a.score);
-        chosenMove = allAiMoves[0];
-      }
-    } else {
-      allAiMoves.sort((a, b) => b.score - a.score);
-      chosenMove = allAiMoves[0];
-    }
-
-    makeMove(chosenMove.from.r, chosenMove.from.c, chosenMove.to.r, chosenMove.to.c);
-  } else {
-    logChess(`🤖 컴퓨터 AI가 이동할 기물이 없어 턴을 넘깁니다.`);
-    gameState.isPlayerTurn = true;
-  }
-}
-
-function updateCapturedUI() {
-  const pBox = document.getElementById('playerCapturedBox');
-  const aBox = document.getElementById('aiCapturedBox');
-
-  if (pBox) pBox.innerHTML = '';
-  if (aBox) aBox.innerHTML = '';
-
-  gameState.playerCaptured.forEach(p => {
-    const span = document.createElement('span');
-    span.className = 'captured-icon';
-    span.textContent = p.symbol;
-    if (pBox) pBox.appendChild(span);
-  });
-
-  gameState.aiCaptured.forEach(p => {
-    const span = document.createElement('span');
-    span.className = 'captured-icon';
-    span.textContent = p.symbol;
-    if (aBox) aBox.appendChild(span);
+      <div class="tip-content-block" style="background: #f0fdf4;">
+        <strong style="color: #047857;">🧊 싱싱한 보관법:</strong><br>
+        ${t.keepTip}
+      </div>
+    `;
+    container.appendChild(card);
   });
 }
 
-function handleGameOver(isPlayerWin) {
-  gameState.isGameOver = true;
-  if (isPlayerWin) {
-    soundManager.playVictory();
-    document.getElementById('resultTitle').textContent = `🏆 체크메이트! (대승리) 🏆`;
-    document.getElementById('resultTitle').style.color = `#f59e0b`;
-    document.getElementById('resultDesc').textContent = `축하합니다! ${gameState.currentCampaign.title} 전락에서 적 킹(군주)을 격파하고 체크메이트 완승을 거두었습니다!`;
-  } else {
-    soundManager.playDefeat();
-    document.getElementById('resultTitle').textContent = `💥 체크메이트 (패배) 💥`;
-    document.getElementById('resultTitle').style.color = `#ef4444`;
-    document.getElementById('resultDesc').textContent = `아군 킹(군주)이 체크메이트 당했습니다. 전술을 재정비하십시오!`;
+// -------------------------------------------------------------
+// 🧊 냉장고 파먹기 재료 체크리스트 & 검색
+// -------------------------------------------------------------
+const COMMON_INGREDIENTS = [
+  '돼지고기', '차돌박이', '스팸', '새우', '계란', '두부', 
+  '신김치', '대파', '양파', '청양고추', '애호박', '떡볶이 떡', '어묵', '파스타면'
+];
+
+function initFridgeChecklist() {
+  const container = document.getElementById('fridgeIngredientChecklist');
+  if (!container) return;
+  container.innerHTML = '';
+
+  COMMON_INGREDIENTS.forEach(ing => {
+    const label = document.createElement('label');
+    label.style.cssText = `
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 10px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    `;
+    label.innerHTML = `
+      <input type="checkbox" value="${ing}" class="fridge-checkbox">
+      <span>${ing}</span>
+    `;
+    container.appendChild(label);
+  });
+}
+
+function openFridgeModal() {
+  document.getElementById('modalFridge').classList.add('active');
+}
+
+function findFridgeRecipes() {
+  const checkedNodes = document.querySelectorAll('.fridge-checkbox:checked');
+  const selectedIngs = Array.from(checkedNodes).map(n => n.value);
+
+  if (selectedIngs.length === 0) {
+    alert("냉장고에 있는 재료를 1개 이상 선택해 주세요!");
+    return;
   }
-  document.getElementById('modalResult').classList.add('active');
+
+  const matchedRecipes = RECIPES.filter(r => {
+    return selectedIngs.some(ing => r.ingredients.some(ri => ri.includes(ing)));
+  });
+
+  closeModal('modalFridge');
+  switchMainTab('recipes');
+  renderRecipes(matchedRecipes);
+  alert(`🎉 선택하신 재료로 조리 가능한 ${matchedRecipes.length}개의 맞춤 레시피를 찾았습니다!`);
+}
+
+// -------------------------------------------------------------
+// ⏱️ 단계별 상세 레시피 모달 & 조리 타이머
+// -------------------------------------------------------------
+function openRecipeDetail(recipe) {
+  document.getElementById('detailImg').src = recipe.img;
+  document.getElementById('detailBadge').textContent = recipe.level;
+  document.getElementById('detailTitle').textContent = `${recipe.icon} ${recipe.name}`;
+  document.getElementById('detailDesc').textContent = recipe.desc;
+  document.getElementById('detailSpoonTip').innerHTML = `🥄 <b>기몌진의 밥숟가락 계량 팁:</b><br>${recipe.spoonTip}`;
+
+  // 재료
+  const ingContainer = document.getElementById('detailIngredients');
+  ingContainer.innerHTML = '';
+  recipe.ingredients.forEach(ing => {
+    const chip = document.createElement('span');
+    chip.style.cssText = `
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #334155;
+      font-weight: 500;
+    `;
+    chip.textContent = ing;
+    ingContainer.appendChild(chip);
+  });
+
+  // 단계별 순서 (Steps)
+  const stepsContainer = document.getElementById('detailSteps');
+  stepsContainer.innerHTML = '';
+
+  recipe.steps.forEach(s => {
+    const stepEl = document.createElement('div');
+    stepEl.className = 'recipe-step-item';
+    stepEl.innerHTML = `
+      <div>
+        <strong style="color: var(--orange-dark);">Step ${s.step}.</strong> ${s.text}
+      </div>
+      ${s.timer ? `<button class="timer-btn" onclick="startRecipeTimer(${s.timer}, this)">⏱️ ${Math.floor(s.timer / 60)}분 타이머</button>` : ''}
+    `;
+    stepsContainer.appendChild(stepEl);
+  });
+
+  document.getElementById('modalRecipeDetail').classList.add('active');
+}
+
+function startRecipeTimer(seconds, btnEl) {
+  if (activeTimer) clearInterval(activeTimer);
+
+  let timeLeft = seconds;
+  btnEl.disabled = true;
+
+  activeTimer = setInterval(() => {
+    timeLeft--;
+    const min = Math.floor(timeLeft / 60);
+    const sec = timeLeft % 60;
+    btnEl.textContent = `⏱️ ${min}:${sec < 10 ? '0' : ''}${sec} 남음`;
+
+    if (timeLeft <= 0) {
+      clearInterval(activeTimer);
+      btnEl.textContent = '🔔 시간 완료!';
+      btnEl.style.background = '#10b981';
+      alert("⏰ 조리 시간이 완료되었습니다!");
+    }
+  }, 1000);
 }
 
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.remove('active');
-}
-
-function logChess(msg) {
-  const box = document.getElementById('chessLogBox');
-  if (!box) return;
-  const p = document.createElement('p');
-  p.style.marginBottom = '4px';
-  p.textContent = msg;
-  box.appendChild(p);
-  box.scrollTop = box.scrollHeight;
-}
-
-function logDuelAlert(msg) {
-  logChess(msg);
 }

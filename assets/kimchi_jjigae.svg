@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+    <defs>
+      <linearGradient id="g_kimchi_jjigae" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#1e293b"/>
+        <stop offset="50%" stop-color="#991b1b"/>
+        <stop offset="100%" stop-color="#0f172a"/>
+      </linearGradient>
+    </defs>
+    <rect width="400" height="400" rx="24" fill="url(#g_kimchi_jjigae)"/>
+    <circle cx="200" cy="180" r="120" fill="rgba(255,255,255,0.1)" stroke="#f59e0b" stroke-width="4"/>
+    <text x="200" y="200" font-family="'Noto Sans KR', sans-serif" font-size="110" text-anchor="middle" dominant-baseline="middle">🍲</text>
+    <rect x="40" y="300" width="320" height="70" rx="16" fill="rgba(15, 23, 42, 0.92)" stroke="#f59e0b" stroke-width="3"/>
+    <text x="200" y="345" font-family="'Noto Sans KR', sans-serif" font-size="32" font-weight="900" text-anchor="middle" fill="#fef08a">돼지고기 김치찌개</text>
+  </svg>

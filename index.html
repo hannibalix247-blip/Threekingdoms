@@ -3,141 +3,166 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>삼국지 영웅전 : 8x8 체스 스토리 캠페인</title>
+  <title>요리왕, 기몌진 : 초보자 레시피 & 메뉴 추천</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- 🏰 1. 세력 및 3단계 스토리 캠페인 선택 랜딩 오버레이 -->
-  <div id="titleScreen">
-    <div style="text-align: center; max-width: 900px;">
-      <h1 class="main-game-title">삼국지 영웅전</h1>
-      <p class="sub-game-title">⚔️ 8x8 삼국지 체스 스토리 캠페인 ⚔️</p>
-      
-      <p style="color: var(--gold-light); font-size: 1.1rem; margin-bottom: 20px;">
-        1. 체스판 위에서 출전시킬 아군의 세력을 선택하십시오!
-      </p>
-
-      <div class="faction-select-container" style="justify-content: center; margin-bottom: 30px;">
-        <!-- 촉한 선택 -->
-        <div id="btnFactionShu" class="faction-choice-card active" onclick="pickPlayerFaction('shu')">
-          <div style="font-size: 2.5rem; margin-bottom: 6px;">🍃</div>
-          <div style="font-size: 1.3rem; font-weight: 900; color: #34d399;">촉한 (蜀漢)</div>
-          <div style="font-size: 0.85rem; color: #cbd5e1; margin-top: 4px;">킹: 유비 | 퀸: 제갈량</div>
-        </div>
-
-        <!-- 조위 선택 -->
-        <div id="btnFactionWei" class="faction-choice-card" onclick="pickPlayerFaction('wei')">
-          <div style="font-size: 2.5rem; margin-bottom: 6px;">🐉</div>
-          <div style="font-size: 1.3rem; font-weight: 900; color: #60a5fa;">조위 (曹魏)</div>
-          <div style="font-size: 0.85rem; color: #cbd5e1; margin-top: 4px;">킹: 조조 | 퀸: 사마의</div>
-        </div>
-
-        <!-- 손오 선택 -->
-        <div id="btnFactionWu" class="faction-choice-card" onclick="pickPlayerFaction('wu')">
-          <div style="font-size: 2.5rem; margin-bottom: 6px;">🔥</div>
-          <div style="font-size: 1.3rem; font-weight: 900; color: #f87171;">손오 (孫吳)</div>
-          <div style="font-size: 0.85rem; color: #cbd5e1; margin-top: 4px;">킹: 손권 | 퀸: 주유</div>
-        </div>
-      </div>
-
-      <p style="color: var(--gold-light); font-size: 1.1rem; margin-bottom: 16px;">
-        2. 도전할 스토리 전장 난이도를 선택하십시오!
-      </p>
-
-      <!-- 3단계 스토리 시나리오 난이도 바 -->
-      <div id="campaignCardList" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-        <!-- JS 동적 생성 -->
-      </div>
-    </div>
-  </div>
-
   <div id="app">
-    <!-- 상단 헤더 바 -->
-    <header class="game-header">
-      <div class="game-title">
-        <span>♟️</span>
-        <span id="headerTitle">삼국지 영웅전 : 8x8 체스</span>
+    <!-- 🍳 1. 상단 네비게이션 헤더 -->
+    <header class="cooking-header">
+      <div class="brand-title" onclick="switchMainTab('recipes')">
+        <span>🍳</span>
+        <span>요리왕, 기몌진</span>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <button id="btnRestart" class="header-btn" style="background: linear-gradient(135deg, #1d4ed8, #2563eb);">📜 전장 선택</button>
-        <button id="btnSaveGame" class="header-btn" style="background: linear-gradient(135deg, #059669, #10b981);">💾 저장</button>
-        <button id="btnLoadGame" class="header-btn" style="background: linear-gradient(135deg, #475569, #64748b);">📂 불러오기</button>
-      </div>
+      <nav class="nav-menu-bar">
+        <button id="btnTabRecipes" class="nav-btn active" onclick="switchMainTab('recipes')">
+          <span>📖</span>
+          <span>초보 레시피</span>
+        </button>
+        <button id="btnTabFrig" class="nav-btn" onclick="openFridgeModal()">
+          <span>🧊</span>
+          <span>냉장고 파먹기</span>
+        </button>
+        <button id="btnTabTips" class="nav-btn" onclick="switchMainTab('tips')">
+          <span>🥬</span>
+          <span>재료 손질 & 보관법</span>
+        </button>
+      </nav>
     </header>
 
-    <!-- ♟️ 2. 메인 8x8 전체 화면 체스 레이아웃 -->
-    <div class="chess-main-wrapper">
-      <!-- 좌측 사이드바: 플레이어 정보 & 잡힌 기물 -->
-      <aside class="chess-sidebar">
-        <!-- 적 AI 체스 군주 정보 -->
-        <div class="player-info-card" style="border-color: #ef4444;">
-          <div>
-            <strong id="aiFactionName" style="color: #f87171; font-size: 1.1rem;">컴퓨터 AI (조위 🐉)</strong>
-            <div style="font-size: 0.8rem; color: #cbd5e1;" id="aiKingName">킹: 조조 | 퀸: 사마의</div>
-          </div>
-          <div style="font-size: 1.8rem;" id="aiFactionIcon">🐉</div>
-        </div>
+    <!-- 🍳 2. 히어로 배너 (웰컴 인사) -->
+    <section class="hero-banner">
+      <div class="hero-text-box">
+        <h1>요리가 쉬워지는 치트키, 요리왕 기몌진! 🍳</h1>
+        <p>
+          "요리가 처음이어도 괜찮아요! 밥숟가락 계량법과 10분 뚝딱 레시피로 실패 없는 한 끼를 완성해 드릴게요."
+        </p>
+      </div>
+      <div style="font-size: 5rem;">🧑‍🍳</div>
+    </section>
 
-        <!-- 적 잡은 기물 수집함 -->
-        <div style="font-size: 0.85rem; color: #cbd5e1;">Captured by AI:</div>
-        <div id="aiCapturedBox" class="captured-box"></div>
-
-        <!-- 전투 진행 정보 & 체스 로그 -->
-        <div id="chessLogBox" style="background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px; font-size: 0.82rem; color: #e2e8f0; height: 180px; overflow-y: auto; border: 1px solid rgba(245, 158, 11, 0.3); margin-top: auto;">
-          ♟️ 삼국지 8x8 체스에 오신 것을 환영합니다!
-        </div>
-
-        <!-- 아군 체스 군주 정보 -->
-        <div class="player-info-card" style="border-color: #3b82f6; margin-top: auto;">
-          <div>
-            <strong id="playerFactionName" style="color: #60a5fa; font-size: 1.1rem;">아군 세력 (촉한 🍃)</strong>
-            <div style="font-size: 0.8rem; color: #cbd5e1;" id="playerKingName">킹: 유비 | 퀸: 제갈량</div>
-          </div>
-          <div style="font-size: 1.8rem;" id="playerFactionIcon">🍃</div>
-        </div>
-
-        <!-- 아군 잡은 기물 수집함 -->
-        <div style="font-size: 0.85rem; color: #cbd5e1;">Captured by Player:</div>
-        <div id="playerCapturedBox" class="captured-box"></div>
-      </aside>
-
-      <!-- 중앙 8x8 전체 화면 체스판 -->
-      <main class="chess-board-area">
-        <div id="chessBoard8x8" class="chess-board-8x8">
-          <!-- JS로 64개 체스 셀 생성 -->
-        </div>
-      </main>
-    </div>
-  </div>
-
-  <!-- 📜 3. 체스 경기 전 [스토리텔링 브리핑 팝업] -->
-  <div id="modalStoryBriefing" class="modal-overlay">
-    <div class="modal-container" style="max-width: 650px; text-align: center;">
-      <div id="briefingIcon" style="font-size: 3.5rem; margin-bottom: 10px;">🔥</div>
-      <h2 id="briefingTitle" class="modal-title" style="font-size: 2.2rem; color: var(--gold-light);">🔥 2단계: 적벽대전 🔥</h2>
-      
-      <div id="briefingContent" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 20px; text-align: left; font-size: 1.05rem; line-height: 1.7; color: #f8fafc; margin: 20px 0; white-space: pre-line;">
-        시나리오 브리핑 내용...
+    <!-- 🍱 3. 6대 요리 카테고리 선택 갤러리 -->
+    <section id="categorySection">
+      <div class="section-header-title">
+        <span>🍱</span>
+        <span>어떤 스타일의 요리를 원하시나요?</span>
       </div>
 
-      <button id="btnStartBattle" class="header-btn" style="padding: 14px 40px; font-size: 1.25rem; width: 100%; background: linear-gradient(135deg, #b45309, #d97706); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);">
-        ⚔️ 전장으로 출진하기 (체스 경기 개시)
+      <div class="category-grid">
+        <div id="cat_all" class="category-card active" onclick="filterCategory('all')">
+          <div class="icon">✨</div>
+          <div class="title">전체 보기</div>
+          <div class="desc">기몌진의 모든 레시피 모음</div>
+        </div>
+        <div id="cat_korean" class="category-card" onclick="filterCategory('korean')">
+          <div class="icon">🍲</div>
+          <div class="title">한식 🇰🇷</div>
+          <div class="desc">찌개, 밑반찬 & 제육볶음</div>
+        </div>
+        <div id="cat_chinese" class="category-card" onclick="filterCategory('chinese')">
+          <div class="icon">🥢</div>
+          <div class="title">중식 🇨🇳</div>
+          <div class="desc">마파두부 & 계란볶음밥</div>
+        </div>
+        <div id="cat_japanese" class="category-card" onclick="filterCategory('japanese')">
+          <div class="icon">🍱</div>
+          <div class="title">일식 🇯🇵</div>
+          <div class="desc">단짠 규동 & 야키소바</div>
+        </div>
+        <div id="cat_western" class="category-card" onclick="filterCategory('western')">
+          <div class="icon">🍝</div>
+          <div class="title">양식 🍝</div>
+          <div class="desc">투움바 파스타 & 감바스</div>
+        </div>
+        <div id="cat_snack" class="category-card" onclick="filterCategory('snack')">
+          <div class="icon">🥘</div>
+          <div class="title">분식 🌶️</div>
+          <div class="desc">추억의 국물 떡볶이</div>
+        </div>
+        <div id="cat_special" class="category-card" onclick="filterCategory('special')">
+          <div class="icon">🌟</div>
+          <div class="title">스페셜 🌟</div>
+          <div class="desc">10분 뚝딱 스팸마요 덮밥</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 📖 4. 레시피 그리드 영역 -->
+    <main id="recipesMainView">
+      <div class="section-header-title">
+        <span>📖</span>
+        <span id="currentCategoryLabel">추천 레시피 목록</span>
+      </div>
+
+      <div id="recipeGridList" class="recipe-grid">
+        <!-- JS 동적 생성 -->
+      </div>
+    </main>
+
+    <!-- 🥬 5. 재료 손질 & 보관 꿀팁 사전 뷰 (기본 숨김) -->
+    <main id="tipsMainView" style="display: none;">
+      <div class="section-header-title">
+        <span>🥬</span>
+        <span>기몌진의 재료 손질 & 보관 꿀팁 사전</span>
+      </div>
+
+      <div id="ingredientTipsGrid" class="ingredient-tips-grid">
+        <!-- JS 동적 생성 -->
+      </div>
+    </main>
+  </div>
+
+  <!-- 🧊 6. 냉장고 파먹기 (재료 체크박스) 모달 -->
+  <div id="modalFridge" class="modal-overlay">
+    <div class="modal-container" style="max-width: 600px;">
+      <button class="modal-close-btn" onclick="closeModal('modalFridge')">✕</button>
+      <h2 style="font-size: 1.8rem; font-weight: 900; color: var(--orange-dark); margin-bottom: 12px;">🧊 냉장고 파먹기 추천기</h2>
+      <p style="color: #64748b; margin-bottom: 20px;">지금 냉장고에 남아있는 재료를 체크해보세요! 뚝딱 만들 수 있는 요리를 찾아드립니다.</p>
+
+      <div id="fridgeIngredientChecklist" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px;">
+        <!-- JS 체크박스 동적 생성 -->
+      </div>
+
+      <button onclick="findFridgeRecipes()" class="nav-btn active" style="width: 100%; justify-content: center; padding: 14px; font-size: 1.1rem;">
+        🔍 만들 수 있는 요리 찾기!
       </button>
     </div>
   </div>
 
-  <!-- 🏆 4. 체크메이트 / 승패 결과 모달 -->
-  <div id="modalResult" class="modal-overlay">
+  <!-- ⏱️ 7. 단계별 상세 레시피 모달 (타이머 내장) -->
+  <div id="modalRecipeDetail" class="modal-overlay">
     <div class="modal-container">
-      <h2 id="resultTitle" class="modal-title">🏆 체크메이트! (승리) 🏆</h2>
-      <p id="resultDesc" style="font-size: 1.15rem; color: #fef08a; margin: 20px 0;">적 킹(군주)을 외통수로 체크메이트하여 삼국 체스 대결에서 승리했습니다!</p>
-      <button class="header-btn" style="padding: 12px 30px; font-size: 1.1rem;" onclick="restartGame()">🔄 새로운 전장 도전하기</button>
+      <button class="modal-close-btn" onclick="closeModal('modalRecipeDetail')">✕</button>
+      
+      <div style="display: flex; gap: 24px; margin-bottom: 24px;">
+        <img id="detailImg" src="" alt="요리" style="width: 180px; height: 180px; border-radius: 16px; object-fit: cover; border: 2px solid var(--orange-light);">
+        <div style="flex: 1;">
+          <span id="detailBadge" class="recipe-badge-level" style="position: static;">★☆☆ (초간단)</span>
+          <h2 id="detailTitle" style="font-size: 2rem; font-weight: 900; color: #0f172a; margin: 8px 0;">돼지고기 김치찌개</h2>
+          <p id="detailDesc" style="color: #64748b; margin-bottom: 14px;">설명...</p>
+          
+          <div class="spoon-cheat-box" id="detailSpoonTip">
+            🥄 밥숟가락 계량 팁: ...
+          </div>
+        </div>
+      </div>
+
+      <!-- 재료 목록 -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="font-size: 1.1rem; font-weight: 900; color: #0f172a; margin-bottom: 8px;">🛒 필요 재료</h3>
+        <div id="detailIngredients" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+      </div>
+
+      <!-- 조리 단계 (Steps) -->
+      <div>
+        <h3 style="font-size: 1.1rem; font-weight: 900; color: #0f172a; margin-bottom: 12px;">🍳 단계별 조리 순서</h3>
+        <div id="detailSteps"></div>
+      </div>
     </div>
   </div>
 
   <script src="data.js"></script>
-  <script src="audio.js"></script>
   <script type="module" src="main.js"></script>
 </body>
 </html>

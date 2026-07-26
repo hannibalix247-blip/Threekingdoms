@@ -1,15 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
 
 :root {
-  --bg-dark: #090d16;
-  --bg-panel: rgba(15, 23, 42, 0.94);
-  --gold-primary: #f59e0b;
-  --gold-light: #fef08a;
-  --gold-dark: #b45309;
-  --wei-color: #2563eb;
-  --shu-color: #059669;
-  --wu-color: #dc2626;
-  --font-serif: 'Noto Serif KR', serif;
+  --bg-dark: #0f172a;
+  --bg-warm: #fffbeb;
+  --bg-card: #ffffff;
+  --orange-primary: #f97316;
+  --orange-light: #ffedd5;
+  --orange-dark: #c2410c;
+  --amber-gold: #f59e0b;
+  --green-fresh: #10b981;
+  --text-dark: #1e293b;
+  --font-main: 'Noto Sans KR', sans-serif;
 }
 
 * {
@@ -20,317 +21,323 @@
 }
 
 body {
-  font-family: var(--font-serif);
-  background-color: var(--bg-dark);
-  color: #f1f5f9;
+  font-family: var(--font-main);
+  background-color: #f8fafc;
+  color: var(--text-dark);
   min-height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
   background-image: 
-    radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.08) 0%, transparent 65%),
-    radial-gradient(circle at 10% 10%, rgba(37, 99, 235, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 90% 90%, rgba(220, 38, 38, 0.08) 0%, transparent 40%);
+    radial-gradient(circle at 10% 20%, rgba(249, 115, 22, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
 }
 
 #app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  width: 100vw;
-  position: relative;
+  min-height: 100vh;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 /* ------------------------------------------------------------- */
-/* 🏰 1. 타이틀 & 세력 선택 오버레이 */
+/* 🍳 1. 상단 네비게이션 헤더 */
 /* ------------------------------------------------------------- */
-#titleScreen {
-  position: fixed;
+.cooking-header {
+  height: 70px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid var(--orange-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  position: sticky;
   top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: radial-gradient(circle at 50% 40%, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.98)),
-              url('https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
-  background-blend-mode: overlay;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+}
+
+.brand-title {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--orange-dark);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.nav-menu-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-btn:hover, .nav-btn.active {
+  background: var(--orange-primary);
+  color: #fff;
+  border-color: var(--orange-primary);
+  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35);
+}
+
+/* ------------------------------------------------------------- */
+/* 🍳 2. 전면 히어로 웰컴 영역 & 6대 카테고리 셀렉터 */
+/* ------------------------------------------------------------- */
+.hero-banner {
+  background: linear-gradient(135deg, #ffedd5, #fef3c7);
+  border-radius: 24px;
+  margin: 24px;
+  padding: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 10px 30px rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+.hero-text-box h1 {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #7c2d12;
+  margin-bottom: 12px;
+}
+
+.hero-text-box p {
+  font-size: 1.15rem;
+  color: #9a3412;
+  line-height: 1.6;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 0 24px 24px 24px;
+}
+
+.category-card {
+  background: #ffffff;
+  border: 2px solid #f1f5f9;
+  border-radius: 20px;
+  padding: 24px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  z-index: 3000;
-  transition: opacity 0.5s ease, transform 0.5s ease;
-  overflow-y: auto;
-  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
 }
 
-#titleScreen.hidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(1.05);
+.category-card:hover, .category-card.active {
+  transform: translateY(-8px);
+  border-color: var(--orange-primary);
+  box-shadow: 0 12px 30px rgba(249, 115, 22, 0.2);
+  background: var(--warm-bg, #fff);
 }
 
-.main-game-title {
-  font-size: 3.8rem;
+.category-card .icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.category-card .title {
+  font-size: 1.3rem;
   font-weight: 900;
-  letter-spacing: 6px;
-  background: linear-gradient(135deg, #fff 0%, #fef08a 30%, #f59e0b 70%, #b45309 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 10px 30px rgba(0,0,0,0.9), 0 0 20px rgba(245, 158, 11, 0.6);
+  color: #1e293b;
+}
+
+.category-card .desc {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* ------------------------------------------------------------- */
+/* 🍱 3. 레시피 그리드 & 음식 카드 */
+/* ------------------------------------------------------------- */
+.section-header-title {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #0f172a;
+  padding: 0 24px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 0 24px 40px 24px;
+}
+
+.recipe-card {
+  background: #ffffff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.recipe-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 35px rgba(249, 115, 22, 0.18);
+}
+
+.recipe-img-box {
+  width: 100%;
+  height: 180px;
+  position: relative;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.recipe-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.recipe-card:hover .recipe-img {
+  transform: scale(1.08);
+}
+
+.recipe-badge-level {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  color: #fef08a;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.recipe-info-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.recipe-title {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #0f172a;
   margin-bottom: 6px;
 }
 
-.sub-game-title {
-  font-size: 1.2rem;
-  color: #cbd5e1;
-  letter-spacing: 3px;
-  margin-bottom: 20px;
+.recipe-desc {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 14px;
+  line-height: 1.5;
 }
 
-.faction-select-container {
-  display: flex;
-  gap: 20px;
-}
-
-.faction-choice-card {
-  width: 220px;
-  background: linear-gradient(145deg, #1e293b, #0f172a);
-  border: 2px solid rgba(245, 158, 11, 0.4);
-  border-radius: 16px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-}
-
-.faction-choice-card:hover, .faction-choice-card.active {
-  transform: translateY(-6px) scale(1.04);
-  border-color: #f59e0b;
-  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.6);
-  background: linear-gradient(145deg, #2b3952, #162035);
-}
-
-/* Header Navbar */
-.game-header {
-  height: 56px;
-  background: rgba(15, 23, 42, 0.95);
-  border-bottom: 2px solid #b45309;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  z-index: 100;
-}
-
-.game-title {
-  font-size: 1.3rem;
-  font-weight: 900;
-  background: linear-gradient(135deg, #fef08a, #f59e0b, #d97706);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.header-btn {
-  background: linear-gradient(135deg, #b45309, #d97706);
-  color: #fff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-family: inherit;
+.spoon-cheat-box {
+  background: #fff7ed;
+  border: 1px dashed var(--orange-primary);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  color: #c2410c;
   font-weight: 700;
-  font-size: 0.88rem;
-  cursor: pointer;
+  margin-top: auto;
 }
 
 /* ------------------------------------------------------------- */
-/* ♟️ 2. 전체 화면 8x8 체스판 (Full-Screen 8x8 Chess Layout) */
+/* 🥬 4. 재료 손질 & 보관 꿀팁 패널 */
 /* ------------------------------------------------------------- */
-.chess-main-wrapper {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-  background: radial-gradient(circle at 50% 50%, #1e293b, #090d16);
-}
-
-/* 좌측 체스 콘솔 & 잡힌 기물 */
-.chess-sidebar {
-  width: 320px;
-  background: var(--bg-panel);
-  border-right: 2px solid rgba(245, 158, 11, 0.3);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  z-index: 10;
-}
-
-.player-info-card {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  border-radius: 12px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.captured-box {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  min-height: 40px;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px dashed rgba(245, 158, 11, 0.3);
-}
-
-.captured-icon {
-  font-size: 1.2rem;
-}
-
-/* 중앙 전체 화면 8x8 체스판 */
-.chess-board-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  position: relative;
-}
-
-.chess-board-8x8 {
+.ingredient-tips-grid {
   display: grid;
-  grid-template-columns: repeat(8, 82px);
-  grid-template-rows: repeat(8, 82px);
-  border: 14px solid #2d1808;
-  border-radius: 14px;
-  box-shadow: 0 25px 65px rgba(0,0,0,0.95), 0 0 35px rgba(245, 158, 11, 0.35);
-  position: relative;
-  background: #0f172a;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  padding: 0 24px 40px 24px;
 }
 
-.chess-square {
-  width: 82px;
-  height: 82px;
+.tip-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tip-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tip-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--orange-light);
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  font-size: 1.8rem;
 }
 
-.chess-square.square-light {
-  background: #e2e8f0;
-}
-
-.chess-square.square-dark {
-  background: #334155;
-}
-
-/* 하이라이트 셀 */
-.chess-square.square-selected {
-  background: rgba(245, 158, 11, 0.65) !important;
-  box-shadow: inset 0 0 14px #fef08a;
-}
-
-.chess-square.square-movable::after {
-  content: '';
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: rgba(16, 185, 129, 0.85);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 1);
-}
-
-.chess-square.square-attackable {
-  background: rgba(239, 68, 68, 0.7) !important;
-  animation: squarePulseRed 1s infinite alternate;
-}
-
-@keyframes squarePulseRed {
-  0% { box-shadow: inset 0 0 0 0 rgba(239, 68, 68, 0.9); }
-  100% { box-shadow: inset 0 0 16px 4px rgba(239, 68, 68, 0.7); }
-}
-
-.chess-square.square-check {
-  background: rgba(220, 38, 38, 0.9) !important;
-  animation: checkFlash 0.6s infinite alternate;
-}
-
-@keyframes checkFlash {
-  0% { box-shadow: inset 0 0 20px #ef4444; }
-  100% { box-shadow: inset 0 0 5px #7f1d1d; }
-}
-
-/* ------------------------------------------------------------- */
-/* ♟️ 3. 외형 실루엣 중심의 3D 체스 피스 조각 디자인 */
-/* ------------------------------------------------------------- */
-.chess-visual-piece {
-  width: 74px;
-  height: 74px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  filter: drop-shadow(0 6px 8px rgba(0,0,0,0.8));
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.chess-visual-piece:hover {
-  transform: scale(1.1) translateY(-4px);
-}
-
-.piece-svg-container {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-.piece-portrait-inset {
-  position: absolute;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #fef08a;
-  box-shadow: 0 0 8px rgba(0,0,0,0.9);
-  z-index: 5;
-}
-
-.piece-name-label {
-  position: absolute;
-  bottom: 2px;
-  font-size: 0.62rem;
+.tip-title {
+  font-size: 1.2rem;
   font-weight: 900;
-  color: #fff;
-  background: rgba(15, 23, 42, 0.9);
-  padding: 1px 4px;
-  border-radius: 4px;
-  border: 1px solid var(--gold-primary);
-  z-index: 6;
-  white-space: nowrap;
+  color: #0f172a;
 }
 
-/* Modals Overlay */
+.tip-content-block {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #334155;
+}
+
+/* ------------------------------------------------------------- */
+/* ⏱️ 5. 상세 레시피 모달 & 조리 타이머 */
+/* ------------------------------------------------------------- */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(8px);
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 4000;
+  z-index: 1000;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
@@ -342,19 +349,52 @@ body {
 }
 
 .modal-container {
-  background: linear-gradient(145deg, #1e293b, #0f172a);
-  border: 2px solid var(--gold-primary);
-  border-radius: 16px;
+  background: #ffffff;
+  border-radius: 24px;
   width: 90%;
-  max-width: 650px;
-  padding: 30px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 36px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.2);
   position: relative;
 }
 
-.modal-title {
-  font-size: 2.2rem;
-  font-weight: 900;
-  color: var(--gold-light);
-  margin-bottom: 16px;
+.modal-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  background: #f1f5f9;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.recipe-step-item {
+  background: #f8fafc;
+  border-left: 4px solid var(--orange-primary);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.timer-btn {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+  white-space: nowrap;
 }

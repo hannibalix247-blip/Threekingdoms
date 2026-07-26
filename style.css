@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
 
 :root {
-  /* 이미지 속 파스텔 하늘색 셰프복 & 따뜻한 키친 조명 톤앤매너 */
   --chef-blue-primary: #38bdf8;
   --chef-blue-light: #e0f2fe;
   --chef-blue-dark: #0284c7;
@@ -44,7 +43,7 @@ body {
 }
 
 /* ------------------------------------------------------------- */
-/* 🍳 1. 상단 네비게이션 헤더 (모바일 가로 스크롤 최적화) */
+/* 🍳 1. 상단 네비게이션 헤더 */
 /* ------------------------------------------------------------- */
 .cooking-header {
   height: 70px;
@@ -136,7 +135,7 @@ body {
 }
 
 /* ------------------------------------------------------------- */
-/* 👩‍🍳 2. 모바일 매칭! 첨부 이미지 중심 히어로 랜딩 존 */
+/* 👩‍🍳 2. 이미지 매칭! 첨부 이미지 중심 히어로 랜딩 존 */
 /* ------------------------------------------------------------- */
 .chef-hero-section {
   background: linear-gradient(135deg, #f0f9ff, #e0f2fe, #fff7ed);
@@ -381,7 +380,62 @@ body {
 }
 
 /* ------------------------------------------------------------- */
-/* 📅 4. 달력 마이페이지 [나는야 쉐프] */
+/* 💬 4. 레시피 상세 댓글 섹션 스타일 (Comments Section) */
+/* ------------------------------------------------------------- */
+.comments-section {
+  margin-top: 24px;
+  border-top: 2px dashed #e2e8f0;
+  padding-top: 20px;
+}
+
+.comment-list-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.comment-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+}
+
+.comment-author-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-weight: 700;
+  color: #0284c7;
+}
+
+.comment-date {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.comment-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.comment-input-row input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 20px;
+  border: 1px solid #cbd5e1;
+  font-family: inherit;
+  font-size: 0.88rem;
+}
+
+/* ------------------------------------------------------------- */
+/* 📅 5. 달력 마이페이지 [나는야 쉐프] */
 /* ------------------------------------------------------------- */
 .chef-calendar-wrapper {
   background: #ffffff;
@@ -518,9 +572,7 @@ body {
   color: #64748b;
 }
 
-/* ------------------------------------------------------------- */
-/* 📱 📱 모바일 스마트폰 화면 최적화 (Mobile Responsive Media Queries) */
-/* ------------------------------------------------------------- */
+/* 📱 모바일 반응형 미디어 쿼리 */
 @media (max-width: 768px) {
   .cooking-header {
     height: 60px;

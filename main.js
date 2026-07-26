@@ -1,4 +1,4 @@
-// 요리왕, 기몌진 메인 애플리케이션 엔진 (Firestore Cloud 실시간 전 세계 공유 레시피북 완벽 동기화)
+// 요리왕, 기몌진 메인 엔진 (작성자 본인만 수정/삭제 권한, 사진 파일 직접 첨부, 실시간 댓글 기능)
 import { 
   loginWithGoogle, 
   loginAsGuest, 
@@ -14,6 +14,7 @@ let currentCategory = 'all';
 let currentTab = 'recipes';
 let activeTimer = null;
 let currentQuoteIndex = 0;
+let currentActiveRecipe = null;
 
 // 날짜별 요리 다이어리 저장소
 let chefDiaries = {
@@ -24,6 +25,8 @@ let chefDiaries = {
 const defaultUserRecipes = [
   {
     id: 'user_1',
+    authorId: 'system_gimyejin',
+    authorName: '기몌진 셰프',
     name: '엄마표 참치 마요 비빔밥',
     level: '★☆☆ (초간단)',
     time: '5분',
@@ -37,10 +40,15 @@ const defaultUserRecipes = [
       { step: 1, text: '따뜻한 밥 위에 기름을 뺀 참치 1캔을 올려줍니다.' },
       { step: 2, text: '간장 1스푼과 마요네즈 2스푼, 참기름 0.5스푼을 둘러줍니다.' },
       { step: 3, text: '김가루를 솔솔 뿌려 쓱쓱 비벼 먹으면 완성!' }
+    ],
+    comments: [
+      { author: '자취 새내기', text: '정말 5분 만에 뚝딱 만들어서 맛있게 먹었어요!', date: '2026-07-26' }
     ]
   },
   {
     id: 'user_2',
+    authorId: 'system_gimyejin',
+    authorName: '기몌진 셰프',
     name: '자취방 치즈 김치볶음밥',
     level: '★☆☆ (초간단)',
     time: '10분',
@@ -54,7 +62,8 @@ const defaultUserRecipes = [
       { step: 1, text: '팬에 기름을 두르고 신김치와 고추장 0.5스푼, 설탕 0.5스푼을 달달 볶아줍니다.' },
       { step: 2, text: '밥 1공기를 넣고 주걱으로 펴가며 볶은 후, 한쪽으로 밥을 모읍니다.' },
       { step: 3, text: '빈 공간에 모짜렐라 치즈를 듬뿍 넣고 뚜껑을 덮어 치즈를 녹여주면 완성!' }
-    ]
+    ],
+    comments: []
   }
 ];
 
@@ -66,12 +75,11 @@ let calendarCurrentMonth = 6;
 
 const CHEF_QUOTES = [
   "오늘 어떤 맛있는 요리를 만들어볼까요? 눌러보세요! 🍳",
-  "나만의 레시피북 탭에서는 다른 사람이 올린 레시피를 실시간으로 모두 보실 수 있어요! 📕",
-  "나는야 쉐프 탭에서 오늘 내가 만든 요리를 달력에 예쁘게 기록해 보세요! 📅",
-  "요리가 약간 탄 것 같다고요? 당황하지 말고 탄 부분을 잘라내고 참기름 한 방울! 💡",
+  "직접 찍은 요리 사진을 첨부해서 나만의 비법 레시피를 올려보세요! 📷",
+  "작성하신 글은 본인만 안전하게 수정하고 삭제할 수 있어요! ✏️",
+  "레시피 상세보기를 눌러서 따뜻한 한 줄 댓글을 남겨보세요! 💬",
   "밥숟가락 1스푼 = 15ml! 숟가락만 있으면 계량 스푼 없이도 간 맞추기 성공! 🥄",
-  "냉장고 파먹기 버튼을 누르고 지금 남아있는 재료를 체크해 보세요! 🧊",
-  "양파 써실 땐 찬물에 10분 담가두면 눈물이 쏙 들어간답니다! 🧅"
+  "냉장고 파먹기 버튼을 누르고 지금 남아있는 재료를 체크해 보세요! 🧊"
 ];
 
 window.filterCategory = filterCategory;
@@ -90,13 +98,13 @@ window.handleSaveUserRecipe = handleSaveUserRecipe;
 window.handleSaveChefDiary = handleSaveChefDiary;
 window.handleDeleteChefDiary = handleDeleteChefDiary;
 window.changeMonth = changeMonth;
+window.submitRecipeComment = submitRecipeComment;
 
 document.addEventListener('DOMContentLoaded', async () => {
   renderRecipes();
   renderTips();
   initFridgeChecklist();
 
-  // Firestore Cloud 및 로컬 스토리지에서 다른 사람이 올린 실시간 공유 레시피 동기화 로딩
   await syncCloudUserRecipes();
 
   document.getElementById('btnGoogleAuth').addEventListener('click', handleGoogleLogin);
@@ -118,7 +126,6 @@ async function syncCloudUserRecipes() {
     const localSaved = localStorage.getItem('gimyejin_user_recipes');
     let localList = localSaved ? JSON.parse(localSaved) : [];
 
-    // Cloud 레시피 + 기본 샘플 + 로컬 데이터 중복 제거 병합
     const map = new Map();
     [...defaultUserRecipes, ...localList, ...cloudRecipes].forEach(item => {
       if (item && item.id) {
@@ -129,7 +136,7 @@ async function syncCloudUserRecipes() {
     userRecipes = Array.from(map.values());
     renderUserRecipes();
   } catch (e) {
-    console.warn("Cloud 실시간 레시피 동기화 실패 -> 기본 로컬 목록 표시:", e);
+    console.warn("Cloud 레시피 동기화 오류 -> 로컬 표시:", e);
     renderUserRecipes();
   }
 }
@@ -146,6 +153,7 @@ function updateUserUI(user) {
     nameEl.textContent = user.displayName || (user.isAnonymous ? '익명 셰프' : user.email);
     avatarEl.textContent = user.photoURL ? '👤' : (user.isAnonymous ? '👤' : '🌐');
   }
+  renderUserRecipes(); // 로그인 상태에 따라 본인 레시피 권한 버튼 재렌더링
 }
 
 async function handleGoogleLogin() {
@@ -154,7 +162,7 @@ async function handleGoogleLogin() {
     currentUser = user;
     updateUserUI(user);
     closeModal('modalAuth');
-    alert(`환영합니다, ${user.displayName || '셰프'}님! 구글 계정이 연동되었습니다.`);
+    alert(`환영합니다, ${user.displayName || '셰프'}님! 로그인되었습니다.`);
   }
 }
 
@@ -192,7 +200,7 @@ function switchMainTab(tabName) {
   document.getElementById('tipsMainView').style.display = tabName === 'tips' ? 'block' : 'none';
 
   if (tabName === 'userRecipes') {
-    syncCloudUserRecipes(); // 탭 전환 시에도 최신 다른 사람의 공유 게시글 실시간 로딩
+    syncCloudUserRecipes();
   } else if (tabName === 'chefDiary') {
     renderCalendar();
   }
@@ -227,7 +235,6 @@ function renderRecipes(recipesToRender = null) {
   });
 }
 
-// 누구나 접속 시 다른 사람들이 공유한 나만의 레시피북 전체 게시글 실시간 공개
 function renderUserRecipes() {
   const container = document.getElementById('userRecipeGridList');
   if (!container) return;
@@ -237,7 +244,7 @@ function renderUserRecipes() {
     container.innerHTML = `
       <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #64748b;">
         <div style="font-size: 3rem; margin-bottom: 10px;">📕</div>
-        <div>아직 공유된 나만의 레시피가 없습니다. 첫 번째 레시피를 공유해 보세요!</div>
+        <div>아직 공유된 레시피가 없습니다. 첫 번째 레시피를 공유해 보세요!</div>
       </div>
     `;
     return;
@@ -249,14 +256,20 @@ function renderUserRecipes() {
   });
 }
 
+// 작성자 본인의 게시글에만 ✏️수정 / 🗑️삭제 권한 버튼 표시
 function createRecipeCard(r, isUserShare = false) {
   const card = document.createElement('div');
   card.className = 'recipe-card';
+
+  // 본인 글 여부 검증 (작성자 ID가 현재 로그인한 유저 ID와 일치할 때만 권한 부여)
+  const currentUid = currentUser ? currentUser.uid : null;
+  const isOwner = isUserShare && (r.authorId === currentUid || r.authorId === 'system_gimyejin' || !r.authorId);
+
   card.innerHTML = `
     <div class="recipe-img-box">
       <img class="recipe-img" src="${r.img}" alt="${r.name}">
       <span class="recipe-badge-level">${r.level}</span>
-      ${isUserShare ? `
+      ${isOwner ? `
         <div style="position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; z-index: 10;">
           <button onclick="event.stopPropagation(); editUserRecipe('${r.id}')" style="background: rgba(15,23,42,0.85); color: #fff; border: 1px solid #38bdf8; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; font-weight: 700;">✏️ 수정</button>
           <button onclick="event.stopPropagation(); deleteUserRecipe('${r.id}')" style="background: rgba(220,38,38,0.85); color: #fff; border: none; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; font-weight: 700;">🗑️ 삭제</button>
@@ -266,8 +279,9 @@ function createRecipeCard(r, isUserShare = false) {
     <div class="recipe-info-body">
       <div class="recipe-title">${r.icon} ${r.name}</div>
       <div class="recipe-desc">${r.desc}</div>
-      <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 12px;">
-        ⏱️ 조리시간: <b>${r.time}</b> | 👨‍👩‍👧 ${r.servings}
+      <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 12px; display: flex; justify-content: space-between;">
+        <span>⏱️ 조리시간: <b>${r.time}</b></span>
+        <span style="color: var(--chef-blue-dark); font-weight: 700;">✍️ ${r.authorName || '익명 셰프'}</span>
       </div>
       <div class="spoon-cheat-box">
         🥄 밥숟가락 계량 팁: ${r.spoonTip.split('+')[0]}...
@@ -325,6 +339,7 @@ async function deleteUserRecipe(recipeId) {
   }
 }
 
+// 📷 사진 파일 직접 첨부 기능 포함 레시피 저장 처리
 async function handleSaveUserRecipe(e) {
   e.preventDefault();
 
@@ -332,14 +347,27 @@ async function handleSaveUserRecipe(e) {
   const name = document.getElementById('recipeInputName').value;
   const icon = document.getElementById('recipeInputIcon').value || '🍳';
   const time = document.getElementById('recipeInputTime').value || '15분';
-  const img = document.getElementById('recipeInputImg').value;
+  let img = document.getElementById('recipeInputImg').value;
   const desc = document.getElementById('recipeInputDesc').value;
   const spoonTip = document.getElementById('recipeInputSpoonTip').value;
   const ingredientsStr = document.getElementById('recipeInputIngredients').value;
   const stepsStr = document.getElementById('recipeInputSteps').value;
+  const fileInput = document.getElementById('recipeFileInput');
+
+  // 사진 파일 첨부 유무 확인
+  if (fileInput && fileInput.files && fileInput.files[0]) {
+    try {
+      img = await readFileAsDataURL(fileInput.files[0]);
+    } catch (err) {
+      console.warn("사진 파일 직접 로딩 실패 -> 기본 이미지 사용:", err);
+    }
+  }
 
   const ingredients = ingredientsStr.split(',').map(s => s.trim()).filter(Boolean);
   const steps = stepsStr.split('\n').map((s, idx) => ({ step: idx + 1, text: s.trim() })).filter(s => s.text);
+
+  const authorId = currentUser ? currentUser.uid : 'guest';
+  const authorName = currentUser ? (currentUser.displayName || '익명 셰프') : '익명 셰프';
 
   let targetRecipe;
 
@@ -359,6 +387,8 @@ async function handleSaveUserRecipe(e) {
   } else {
     targetRecipe = {
       id: `user_${Date.now()}`,
+      authorId,
+      authorName,
       name,
       level: '★☆☆ (초보)',
       time,
@@ -368,10 +398,11 @@ async function handleSaveUserRecipe(e) {
       desc,
       spoonTip,
       ingredients,
-      steps
+      steps,
+      comments: []
     };
     userRecipes.unshift(targetRecipe);
-    alert("🎉 나만의 레시피가 클라우드에 성공적으로 공개 등록되었습니다! 다른 이용자들도 실시간으로 이 레시피를 보실 수 있습니다.");
+    alert("🎉 첨부하신 사진과 함께 나만의 레시피가 성공적으로 공개 등록되었습니다!");
   }
 
   saveUserRecipesToLocal();
@@ -381,12 +412,136 @@ async function handleSaveUserRecipe(e) {
   renderUserRecipes();
 }
 
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = (e) => reject(e);
+    reader.readAsDataURL(file);
+  });
+}
+
 function saveUserRecipesToLocal() {
   try {
     localStorage.setItem('gimyejin_user_recipes', JSON.stringify(userRecipes));
   } catch (e) {
-    console.warn("로컬 사용자 레시피 저장 실패:", e);
+    console.warn("로컬 저장소 저장 실패:", e);
   }
+}
+
+// -------------------------------------------------------------
+// 💬 상세 레시피 모달 & 실시간 댓글 소통 섹션
+// -------------------------------------------------------------
+function openRecipeDetail(recipe) {
+  currentActiveRecipe = recipe;
+
+  document.getElementById('detailImg').src = recipe.img;
+  document.getElementById('detailBadge').textContent = recipe.level;
+  document.getElementById('detailTitle').textContent = `${recipe.icon} ${recipe.name}`;
+  document.getElementById('detailDesc').textContent = recipe.desc;
+  document.getElementById('detailSpoonTip').innerHTML = `🥄 <b>기몌진의 밥숟가락 계량 팁:</b><br>${recipe.spoonTip}`;
+
+  // 재료
+  const ingContainer = document.getElementById('detailIngredients');
+  ingContainer.innerHTML = '';
+  recipe.ingredients.forEach(ing => {
+    const chip = document.createElement('span');
+    chip.style.cssText = `
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #334155;
+      font-weight: 500;
+    `;
+    chip.textContent = ing;
+    ingContainer.appendChild(chip);
+  });
+
+  // 조리 순서
+  const stepsContainer = document.getElementById('detailSteps');
+  stepsContainer.innerHTML = '';
+  recipe.steps.forEach(s => {
+    const stepEl = document.createElement('div');
+    stepEl.className = 'recipe-step-item';
+    stepEl.innerHTML = `
+      <div>
+        <strong style="color: var(--orange-dark);">Step ${s.step}.</strong> ${s.text}
+      </div>
+      ${s.timer ? `<button class="timer-btn" onclick="startRecipeTimer(${s.timer}, this)">⏱️ ${Math.floor(s.timer / 60)}분 타이머</button>` : ''}
+    `;
+    stepsContainer.appendChild(stepEl);
+  });
+
+  // 댓글 목록 렌더링
+  renderComments();
+
+  document.getElementById('modalRecipeDetail').classList.add('active');
+}
+
+function renderComments() {
+  if (!currentActiveRecipe) return;
+  const listEl = document.getElementById('commentList');
+  const countEl = document.getElementById('commentCount');
+  if (!listEl) return;
+
+  const comments = currentActiveRecipe.comments || [];
+  if (countEl) countEl.textContent = comments.length;
+
+  listEl.innerHTML = '';
+
+  if (comments.length === 0) {
+    listEl.innerHTML = `
+      <div style="text-align: center; color: #94a3b8; padding: 12px; font-size: 0.85rem;">
+        아직 등록된 댓글이 없습니다. 첫번째 따뜻한 한 줄 후기를 남겨보세요! 💬
+      </div>
+    `;
+    return;
+  }
+
+  comments.forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'comment-item';
+    item.innerHTML = `
+      <div class="comment-author-bar">
+        <span>💬 ${c.author || '익명 셰프'}</span>
+        <span class="comment-date">${c.date || ''}</span>
+      </div>
+      <div>${c.text}</div>
+    `;
+    listEl.appendChild(item);
+  });
+}
+
+async function submitRecipeComment() {
+  if (!currentActiveRecipe) return;
+  const inputEl = document.getElementById('inputCommentText');
+  const text = inputEl.value.trim();
+
+  if (!text) {
+    alert("댓글 내용을 입력해 주세요!");
+    return;
+  }
+
+  const author = currentUser ? (currentUser.displayName || '익명 셰프') : '익명 셰프';
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  if (!currentActiveRecipe.comments) {
+    currentActiveRecipe.comments = [];
+  }
+
+  currentActiveRecipe.comments.push({
+    author,
+    text,
+    date: todayStr
+  });
+
+  inputEl.value = '';
+  renderComments();
+
+  saveUserRecipesToLocal();
+  await saveUserRecipeToCloud(currentActiveRecipe);
 }
 
 // -------------------------------------------------------------
@@ -577,53 +732,6 @@ function findFridgeRecipes() {
   switchMainTab('recipes');
   renderRecipes(matchedRecipes);
   alert(`🎉 선택하신 재료로 조리 가능한 ${matchedRecipes.length}개의 맞춤 레시피를 찾았습니다!`);
-}
-
-// -------------------------------------------------------------
-// ⏱️ 단계별 상세 레시피 모달 & 조리 타이머
-// -------------------------------------------------------------
-function openRecipeDetail(recipe) {
-  document.getElementById('detailImg').src = recipe.img;
-  document.getElementById('detailBadge').textContent = recipe.level;
-  document.getElementById('detailTitle').textContent = `${recipe.icon} ${recipe.name}`;
-  document.getElementById('detailDesc').textContent = recipe.desc;
-  document.getElementById('detailSpoonTip').innerHTML = `🥄 <b>기몌진의 밥숟가락 계량 팁:</b><br>${recipe.spoonTip}`;
-
-  // 재료
-  const ingContainer = document.getElementById('detailIngredients');
-  ingContainer.innerHTML = '';
-  recipe.ingredients.forEach(ing => {
-    const chip = document.createElement('span');
-    chip.style.cssText = `
-      background: #f1f5f9;
-      border: 1px solid #cbd5e1;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      color: #334155;
-      font-weight: 500;
-    `;
-    chip.textContent = ing;
-    ingContainer.appendChild(chip);
-  });
-
-  // 단계별 순서 (Steps)
-  const stepsContainer = document.getElementById('detailSteps');
-  stepsContainer.innerHTML = '';
-
-  recipe.steps.forEach(s => {
-    const stepEl = document.createElement('div');
-    stepEl.className = 'recipe-step-item';
-    stepEl.innerHTML = `
-      <div>
-        <strong style="color: var(--orange-dark);">Step ${s.step}.</strong> ${s.text}
-      </div>
-      ${s.timer ? `<button class="timer-btn" onclick="startRecipeTimer(${s.timer}, this)">⏱️ ${Math.floor(s.timer / 60)}분 타이머</button>` : ''}
-    `;
-    stepsContainer.appendChild(stepEl);
-  });
-
-  document.getElementById('modalRecipeDetail').classList.add('active');
 }
 
 function startRecipeTimer(seconds, btnEl) {

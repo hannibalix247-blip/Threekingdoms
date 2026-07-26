@@ -8,7 +8,7 @@
 </head>
 <body>
   <div id="app">
-    <!-- 🍳 1. 상단 네비게이션 헤더 (모바일 스크롤 지원) -->
+    <!-- 🍳 1. 상단 네비게이션 헤더 -->
     <header class="cooking-header">
       <div class="brand-title" onclick="switchMainTab('recipes')">
         <span>🍳</span>
@@ -46,7 +46,7 @@
       </div>
     </header>
 
-    <!-- 👩‍🍳 2. 첫 화면: 업로드된 일러스트 이미지 중심 '기몌진 셰프' 모바일 반응형 히어로 랜딩 존 -->
+    <!-- 👩‍🍳 2. 첫 화면: 업로드된 일러스트 이미지 중심 '기몌진 셰프' 히어로 랜딩 존 -->
     <section class="chef-hero-section">
       <div class="chef-hero-left">
         <h1>안녕하세요!<br>요리왕 기몌진입니다 🍳✨</h1>
@@ -141,7 +141,7 @@
       </div>
     </main>
 
-    <!-- 📕 4-2. 공유 커뮤니티 [나만의 레시피북] 뷰 (로그인 무관 전체 공개) -->
+    <!-- 📕 4-2. 공유 커뮤니티 [나만의 레시피북] 뷰 (작성자 본인만 수정/삭제 권한 노출) -->
     <main id="userRecipesMainView" style="display: none;">
       <div class="section-header-title">
         <span>📕 나만의 레시피북 (공유 공간)</span>
@@ -212,7 +212,7 @@
     </div>
   </div>
 
-  <!-- ➕ 6. 나만의 레시피 등록 / 수정 모달 -->
+  <!-- ➕ 6. 나만의 레시피 등록 / 수정 모달 (📷 요리 사진 파일 첨부 기능 포함) -->
   <div id="modalAddRecipe" class="modal-overlay">
     <div class="modal-container" style="max-width: 650px;">
       <button class="modal-close-btn" onclick="closeModal('modalAddRecipe')">✕</button>
@@ -237,8 +237,15 @@
           </div>
         </div>
 
+        <!-- 📷 요리 사진 파일 직접 첨부 기능 -->
         <div class="form-input-group">
-          <label>대표 사진 선택</label>
+          <label>📷 요리 인증샷 사진 파일 직접 첨부 (스마트폰/PC 갤러리)</label>
+          <input type="file" id="recipeFileInput" accept="image/*" style="padding: 8px;">
+          <small style="color: #64748b; font-size: 0.78rem;">* 파일 미선택 시 기본 템플릿 이미지가 사용됩니다.</small>
+        </div>
+
+        <div class="form-input-group">
+          <label>기본 템플릿 사진 선택 (파일 미첨부 시 적용)</label>
           <select id="recipeInputImg">
             <option value="./assets/kimchi_jjigae.svg">🍲 찌개 / 국물 이미지</option>
             <option value="./assets/jeyuk.svg">🥩 고기 / 볶음 이미지</option>
@@ -276,7 +283,7 @@
     </div>
   </div>
 
-  <!-- 📅 7. 날짜별 요리 다이어리 등록 / 수정 모달 -->
+  <!-- 📅 7. 날짜별 요리 다이어리 모달 -->
   <div id="modalAddDiary" class="modal-overlay">
     <div class="modal-container" style="max-width: 550px;">
       <button class="modal-close-btn" onclick="closeModal('modalAddDiary')">✕</button>
@@ -345,13 +352,13 @@
     </div>
   </div>
 
-  <!-- ⏱️ 9. 상세 레시피 모달 -->
+  <!-- ⏱️ 9. 상세 레시피 모달 (💬 실시간 댓글 소통 섹션 포함) -->
   <div id="modalRecipeDetail" class="modal-overlay">
     <div class="modal-container">
       <button class="modal-close-btn" onclick="closeModal('modalRecipeDetail')">✕</button>
       
       <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px;">
-        <img id="detailImg" src="" alt="요리" style="width: 100%; height: 200px; border-radius: 16px; object-fit: cover; border: 2px solid var(--chef-blue-light);">
+        <img id="detailImg" src="" alt="요리" style="width: 100%; height: 220px; border-radius: 16px; object-fit: cover; border: 2px solid var(--chef-blue-light);">
         <div>
           <span id="detailBadge" class="recipe-badge-level" style="position: static;">★☆☆ (초간단)</span>
           <h2 id="detailTitle" style="font-size: 1.6rem; font-weight: 900; color: #0f172a; margin: 6px 0;">돼지고기 김치찌개</h2>
@@ -371,6 +378,22 @@
       <div>
         <h3 style="font-size: 1rem; font-weight: 900; color: #0f172a; margin-bottom: 10px;">🍳 단계별 조리 순서</h3>
         <div id="detailSteps"></div>
+      </div>
+
+      <!-- 💬 실시간 댓글 소통 섹션 -->
+      <div class="comments-section">
+        <h3 style="font-size: 1.05rem; font-weight: 900; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+          💬 이용자 소통 댓글 (<span id="commentCount">0</span>)
+        </h3>
+
+        <!-- 댓글 목록 -->
+        <div id="commentList" class="comment-list-box"></div>
+
+        <!-- 댓글 작성 폼 -->
+        <div class="comment-input-row">
+          <input type="text" id="inputCommentText" placeholder="따뜻한 한 줄 후기나 댓글을 남겨보세요!" onkeydown="if(event.key==='Enter') submitRecipeComment()">
+          <button class="nav-btn active" style="padding: 8px 16px;" onclick="submitRecipeComment()">등록</button>
+        </div>
       </div>
     </div>
   </div>

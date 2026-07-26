@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>요리왕, 기몌진 : 레시피 공유 & 요리 다이어리</title>
+  <title>요리왕, 기몌진 : 초보자를 위한 쉬운 레시피 & 요리 다이어리</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,6 +13,7 @@
       <div class="brand-title" onclick="switchMainTab('recipes')">
         <span>🍳</span>
         <span>요리왕, 기몌진</span>
+        <span class="brand-badge">★ Chef Edition</span>
       </div>
 
       <nav class="nav-menu-bar">
@@ -45,10 +46,10 @@
       </div>
     </header>
 
-    <!-- 👩‍🍳 2. 첫 화면: 귀여운 여자 요리사 캐릭터 '기몌진 셰프' 히어로 랜딩 존 -->
+    <!-- 👩‍🍳 2. 첫 화면: 업로드된 일러스트 이미지 중심 '기몌진 셰프' 히어로 랜딩 존 -->
     <section class="chef-hero-section">
       <div class="chef-hero-left">
-        <h1>안녕하세요!<br>요리왕 기몌진입니다 🍳</h1>
+        <h1>안녕하세요!<br>요리왕 기몌진입니다 🍳✨</h1>
         
         <!-- 💬 말풍선 대화 인터랙션 -->
         <div id="chefSpeechBubble" class="speech-bubble" onclick="nextChefQuote()">
@@ -66,24 +67,27 @@
             <span>📕</span>
             <span>나만의 레시피북 공유</span>
           </button>
-          <button class="quick-action-btn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);" onclick="switchMainTab('chefDiary')">
+          <button class="quick-action-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706);" onclick="switchMainTab('chefDiary')">
             <span>📅</span>
             <span>나는야 쉐프 다이어리</span>
           </button>
         </div>
       </div>
 
-      <!-- 👩‍🍳 귀여운 요리사 기몌진 캐릭터 일러스트 -->
-      <div class="chef-character-box" onclick="nextChefQuote()">
-        <img class="chef-character-img" src="./assets/chef_gimyejin.svg" alt="기몌진 셰프">
+      <!-- 👩‍🍳 업로드해 주신 기몌진 셰프 캐릭터 액자 프레임 -->
+      <div class="chef-image-frame-box" onclick="nextChefQuote()">
+        <img class="chef-hero-img" src="./assets/chef_gimyejin_hero.jpg" alt="요리왕 기몌진 셰프">
+        <div class="thumb-up-badge">
+          <span>👍</span>
+          <span>기몌진 셰프 강추!</span>
+        </div>
       </div>
     </section>
 
     <!-- 🍱 3. 6대 요리 카테고리 선택 갤러리 -->
     <section id="categorySection">
       <div class="section-header-title">
-        <span>🍱</span>
-        <span>어떤 스타일의 요리를 원하시나요?</span>
+        <span>🍱 어떤 스타일의 요리를 원하시나요?</span>
       </div>
 
       <div class="category-grid">
@@ -194,7 +198,7 @@
   <div id="modalAuth" class="modal-overlay">
     <div class="modal-container" style="max-width: 480px; text-align: center;">
       <button class="modal-close-btn" onclick="closeModal('modalAuth')">✕</button>
-      <h2 style="font-size: 1.8rem; font-weight: 900; color: var(--orange-dark); margin-bottom: 16px;">🔐 사용자 계정 로그인</h2>
+      <h2 style="font-size: 1.8rem; font-weight: 900; color: var(--chef-blue-dark); margin-bottom: 16px;">🔐 사용자 계정 로그인</h2>
       <p style="color: #64748b; margin-bottom: 24px;">구글 계정으로 로그인하여 나만의 레시피를 공유하고 요리 다이어리를 연동하세요!</p>
 
       <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -212,7 +216,7 @@
   <div id="modalAddRecipe" class="modal-overlay">
     <div class="modal-container" style="max-width: 650px;">
       <button class="modal-close-btn" onclick="closeModal('modalAddRecipe')">✕</button>
-      <h2 style="font-size: 1.8rem; font-weight: 900; color: var(--orange-dark); margin-bottom: 16px;">📕 나만의 레시피 올리기</h2>
+      <h2 style="font-size: 1.8rem; font-weight: 900; color: var(--chef-blue-dark); margin-bottom: 16px;">📕 나만의 레시피 올리기</h2>
 
       <form id="addRecipeForm" onsubmit="handleSaveUserRecipe(event)">
         <div class="form-input-group">
@@ -274,7 +278,7 @@
   <div id="modalAddDiary" class="modal-overlay">
     <div class="modal-container" style="max-width: 550px;">
       <button class="modal-close-btn" onclick="closeModal('modalAddDiary')">✕</button>
-      <h2 id="diaryModalDateTitle" style="font-size: 1.6rem; font-weight: 900; color: var(--orange-dark); margin-bottom: 16px;">📅 요리 다이어리 작성</h2>
+      <h2 id="diaryModalDateTitle" style="font-size: 1.6rem; font-weight: 900; color: var(--chef-blue-dark); margin-bottom: 16px;">📅 요리 다이어리 작성</h2>
 
       <form id="addDiaryForm" onsubmit="handleSaveChefDiary(event)">
         <div class="form-input-group">
@@ -321,7 +325,7 @@
   <div id="modalFridge" class="modal-overlay">
     <div class="modal-container" style="max-width: 600px;">
       <button class="modal-close-btn" onclick="closeModal('modalFridge')">✕</button>
-      <h2 style="font-size: 1.8rem; font-weight: 900; color: var(--orange-dark); margin-bottom: 12px;">🧊 냉장고 파먹기 추천기</h2>
+      <h2 style="font-size: 1.8rem; font-weight: 900; color: var(--chef-blue-dark); margin-bottom: 12px;">🧊 냉장고 파먹기 추천기</h2>
       <p style="color: #64748b; margin-bottom: 20px;">지금 냉장고에 남아있는 재료를 체크해보세요! 뚝딱 만들 수 있는 요리를 찾아드립니다.</p>
 
       <div id="fridgeIngredientChecklist" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px;">
@@ -340,7 +344,7 @@
       <button class="modal-close-btn" onclick="closeModal('modalRecipeDetail')">✕</button>
       
       <div style="display: flex; gap: 24px; margin-bottom: 24px;">
-        <img id="detailImg" src="" alt="요리" style="width: 180px; height: 180px; border-radius: 16px; object-fit: cover; border: 2px solid var(--orange-light);">
+        <img id="detailImg" src="" alt="요리" style="width: 180px; height: 180px; border-radius: 16px; object-fit: cover; border: 2px solid var(--chef-blue-light);">
         <div style="flex: 1;">
           <span id="detailBadge" class="recipe-badge-level" style="position: static;">★☆☆ (초간단)</span>
           <h2 id="detailTitle" style="font-size: 2rem; font-weight: 900; color: #0f172a; margin: 8px 0;">돼지고기 김치찌개</h2>

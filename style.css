@@ -1,15 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
 
 :root {
-  --bg-dark: #0f172a;
-  --bg-warm: #fffbeb;
-  --bg-card: #ffffff;
+  /* 이미지 속 파스텔 하늘색 셰프복 & 따뜻한 키친 조명 톤앤매너 */
+  --chef-blue-primary: #38bdf8;
+  --chef-blue-light: #e0f2fe;
+  --chef-blue-dark: #0284c7;
+  
+  --kitchen-warm-wood: #d97706;
+  --kitchen-gold: #f59e0b;
+  --kitchen-cream: #fffbeb;
+  
   --orange-primary: #f97316;
-  --orange-light: #ffedd5;
-  --orange-dark: #c2410c;
-  --amber-gold: #f59e0b;
-  --green-fresh: #10b981;
-  --text-dark: #1e293b;
+  --text-dark: #0f172a;
   --font-main: 'Noto Sans KR', sans-serif;
 }
 
@@ -27,8 +29,8 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   background-image: 
-    radial-gradient(circle at 10% 20%, rgba(249, 115, 22, 0.06) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.06) 0%, transparent 40%);
+    radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(245, 158, 11, 0.08) 0%, transparent 40%);
 }
 
 #app {
@@ -40,13 +42,13 @@ body {
 }
 
 /* ------------------------------------------------------------- */
-/* 🍳 1. 상단 네비게이션 헤더 & 로그인 프로필 */
+/* 🍳 1. 상단 네비게이션 헤더 & 파스텔 파랑/골드 라인 */
 /* ------------------------------------------------------------- */
 .cooking-header {
-  height: 70px;
+  height: 75px;
   background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 2px solid var(--orange-light);
+  backdrop-filter: blur(12px);
+  border-bottom: 3px solid var(--chef-blue-primary);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -54,29 +56,38 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 20px rgba(2, 132, 199, 0.08);
 }
 
 .brand-title {
-  font-size: 1.6rem;
+  font-size: 1.65rem;
   font-weight: 900;
-  color: var(--orange-dark);
+  color: var(--chef-blue-dark);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   cursor: pointer;
+}
+
+.brand-badge {
+  background: linear-gradient(135deg, var(--chef-blue-primary), var(--chef-blue-dark));
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 700;
 }
 
 .nav-menu-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .nav-btn {
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
-  color: #475569;
+  color: #334155;
   padding: 10px 18px;
   border-radius: 30px;
   font-family: inherit;
@@ -90,45 +101,45 @@ body {
 }
 
 .nav-btn:hover, .nav-btn.active {
-  background: var(--orange-primary);
+  background: linear-gradient(135deg, var(--chef-blue-primary), var(--chef-blue-dark));
   color: #fff;
-  border-color: var(--orange-primary);
-  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35);
+  border-color: var(--chef-blue-primary);
+  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
 }
 
 .user-profile-chip {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--orange-light);
-  border: 1px solid var(--orange-primary);
+  background: var(--chef-blue-light);
+  border: 1px solid var(--chef-blue-primary);
   padding: 6px 14px;
   border-radius: 20px;
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--orange-dark);
+  color: var(--chef-blue-dark);
   transition: all 0.2s ease;
 }
 
 .user-profile-chip:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
 }
 
 /* ------------------------------------------------------------- */
-/* 👩‍🍳 2. 귀여운 '기몌진 셰프' 히어로 랜딩 존 */
+/* 👩‍🍳 2. 이미지 매칭! 첨부 이미지 중심 히어로 랜딩 존 */
 /* ------------------------------------------------------------- */
 .chef-hero-section {
-  background: linear-gradient(135deg, #fff7ed, #ffedd5, #fef3c7);
-  border-radius: 28px;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe, #fff7ed);
+  border-radius: 32px;
   margin: 24px;
-  padding: 40px;
+  padding: 36px 44px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 12px 35px rgba(249, 115, 22, 0.12);
-  border: 2px solid rgba(249, 115, 22, 0.2);
+  box-shadow: 0 16px 40px rgba(2, 132, 199, 0.12);
+  border: 3px solid rgba(56, 189, 248, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -140,24 +151,25 @@ body {
 }
 
 .chef-hero-left h1 {
-  font-size: 2.8rem;
+  font-size: 2.9rem;
   font-weight: 900;
-  color: #7c2d12;
-  line-height: 1.2;
+  color: #0369a1;
+  line-height: 1.25;
   margin-bottom: 16px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-/* 💬 말풍선 인터랙티브 텍스트 */
+/* 💬 말풍선 대화 인터랙션 (파스텔 블루 하이라이트) */
 .speech-bubble {
   position: relative;
   background: #ffffff;
-  border-radius: 20px;
+  border-radius: 22px;
   padding: 20px 24px;
   font-size: 1.15rem;
   font-weight: 700;
-  color: #9a3412;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-  border: 2px solid var(--orange-primary);
+  color: #0284c7;
+  box-shadow: 0 10px 30px rgba(2, 132, 199, 0.12);
+  border: 2.5 solid var(--chef-blue-primary);
   margin-bottom: 24px;
   cursor: pointer;
   transition: transform 0.2s ease;
@@ -170,28 +182,6 @@ body {
   transform: scale(1.02);
 }
 
-.speech-bubble::after {
-  content: '';
-  position: absolute;
-  right: -16px;
-  top: 50%;
-  transform: translateY(-50%);
-  border-width: 10px 0 10px 16px;
-  border-style: solid;
-  border-color: transparent transparent transparent #ffffff;
-}
-
-.speech-bubble::before {
-  content: '';
-  position: absolute;
-  right: -19px;
-  top: 50%;
-  transform: translateY(-50%);
-  border-width: 11px 0 11px 18px;
-  border-style: solid;
-  border-color: transparent transparent transparent var(--orange-primary);
-}
-
 .hero-quick-actions {
   display: flex;
   gap: 12px;
@@ -199,7 +189,7 @@ body {
 }
 
 .quick-action-btn {
-  background: linear-gradient(135deg, #f97316, #ea580c);
+  background: linear-gradient(135deg, var(--chef-blue-primary), var(--chef-blue-dark));
   color: #fff;
   border: none;
   padding: 14px 24px;
@@ -208,7 +198,7 @@ body {
   font-size: 1.05rem;
   font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.35);
   transition: all 0.25s ease;
   display: flex;
   align-items: center;
@@ -217,40 +207,54 @@ body {
 
 .quick-action-btn:hover {
   transform: translateY(-3px) scale(1.04);
-  box-shadow: 0 10px 25px rgba(249, 115, 22, 0.6);
+  box-shadow: 0 10px 25px rgba(2, 132, 199, 0.5);
 }
 
-/* 요리사 캐릭터 박스 */
-.chef-character-box {
-  width: 380px;
-  height: 380px;
+/* 첨부된 사용자 이미지 기반 액자 프레임 일러스트 박스 */
+.chef-image-frame-box {
+  width: 420px;
+  height: 480px;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: chefFloat 3.5s infinite ease-in-out;
+  border-radius: 28px;
+  overflow: hidden;
+  border: 6px solid #ffffff;
+  box-shadow: 0 20px 45px rgba(2, 132, 199, 0.25), 0 0 25px rgba(245, 158, 11, 0.2);
+  transform: rotate(1.5deg);
+  transition: transform 0.4s ease;
   cursor: pointer;
 }
 
-@keyframes chefFloat {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-12px) rotate(1deg); }
+.chef-image-frame-box:hover {
+  transform: rotate(0deg) scale(1.03);
 }
 
-.chef-character-img {
+.chef-hero-img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 15px 25px rgba(249, 115, 22, 0.25));
-  transition: transform 0.3s ease;
+  object-fit: cover;
+  object-position: center top;
 }
 
-.chef-character-box:hover .chef-character-img {
-  transform: scale(1.06);
+.thumb-up-badge {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  border: 2px solid var(--chef-blue-primary);
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-weight: 900;
+  color: var(--chef-blue-dark);
+  font-size: 0.95rem;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* ------------------------------------------------------------- */
-/* 🍱 3. 6대 요리 카테고리 셀렉터 & 레시피 카드 */
+/* 🍱 3. 카테고리 & 카드 스타일 매칭 */
 /* ------------------------------------------------------------- */
 .section-header-title {
   font-size: 1.6rem;
@@ -272,7 +276,7 @@ body {
 
 .category-card {
   background: #ffffff;
-  border: 2px solid #f1f5f9;
+  border: 2px solid #e0f2fe;
   border-radius: 20px;
   padding: 20px 14px;
   display: flex;
@@ -285,9 +289,9 @@ body {
 
 .category-card:hover, .category-card.active {
   transform: translateY(-8px);
-  border-color: var(--orange-primary);
-  box-shadow: 0 12px 30px rgba(249, 115, 22, 0.2);
-  background: #fff;
+  border-color: var(--chef-blue-primary);
+  box-shadow: 0 12px 30px rgba(56, 189, 248, 0.25);
+  background: #ffffff;
 }
 
 .category-card .icon {
@@ -320,7 +324,7 @@ body {
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 8px 25px rgba(0,0,0,0.05);
-  border: 1px solid #f1f5f9;
+  border: 1px solid #e0f2fe;
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
@@ -329,7 +333,7 @@ body {
 
 .recipe-card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 15px 35px rgba(249, 115, 22, 0.18);
+  box-shadow: 0 15px 35px rgba(56, 189, 248, 0.2);
 }
 
 .recipe-img-box {
@@ -385,18 +389,18 @@ body {
 }
 
 .spoon-cheat-box {
-  background: #fff7ed;
-  border: 1px dashed var(--orange-primary);
+  background: #f0f9ff;
+  border: 1px dashed var(--chef-blue-primary);
   padding: 10px 12px;
   border-radius: 10px;
   font-size: 0.82rem;
-  color: #c2410c;
+  color: #0284c7;
   font-weight: 700;
   margin-top: auto;
 }
 
 /* ------------------------------------------------------------- */
-/* 📅 4. 마이페이지 [나는야 쉐프] 달력 인터랙티브 스타일 */
+/* 📅 4. 달력 마이페이지 [나는야 쉐프] */
 /* ------------------------------------------------------------- */
 .chef-calendar-wrapper {
   background: #ffffff;
@@ -404,7 +408,7 @@ body {
   margin: 0 24px 40px 24px;
   padding: 32px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e0f2fe;
 }
 
 .calendar-header-bar {
@@ -417,7 +421,7 @@ body {
 .calendar-title-text {
   font-size: 1.8rem;
   font-weight: 900;
-  color: var(--orange-dark);
+  color: #0284c7;
 }
 
 .calendar-grid {
@@ -451,8 +455,8 @@ body {
 }
 
 .calendar-day-cell:hover {
-  border-color: var(--orange-primary);
-  background: #fff7ed;
+  border-color: var(--chef-blue-primary);
+  background: #f0f9ff;
   transform: translateY(-2px);
 }
 
@@ -464,7 +468,7 @@ body {
 }
 
 .day-number.today {
-  background: var(--orange-primary);
+  background: var(--chef-blue-primary);
   color: #fff;
   width: 24px;
   height: 24px;
@@ -476,13 +480,13 @@ body {
 
 .diary-badge {
   background: #ffffff;
-  border: 1px solid var(--orange-primary);
+  border: 1px solid var(--chef-blue-primary);
   border-radius: 8px;
   padding: 4px 6px;
   margin-top: 4px;
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--orange-dark);
+  color: var(--chef-blue-dark);
   display: flex;
   align-items: center;
   gap: 4px;

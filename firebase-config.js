@@ -12,7 +12,12 @@ import {
   getFirestore, 
   doc, 
   setDoc, 
-  getDoc 
+  getDoc,
+  collection,
+  getDocs,
+  deleteDoc,
+  query,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Firebase 사용자 발급 키 적용
@@ -58,14 +63,14 @@ export async function loginWithGoogle() {
 // 2. 게스트 비로그인 (익명 로그인)
 export async function loginAsGuest() {
   if (!auth) {
-    return { uid: 'guest_' + Date.now(), displayName: '익명 군주 (게스트)', isAnonymous: true };
+    return { uid: 'guest_' + Date.now(), displayName: '익명 셰프', isAnonymous: true };
   }
   try {
     const result = await signInAnonymously(auth);
     return result.user;
   } catch (error) {
     console.error("게스트 로그인 실패:", error);
-    return { uid: 'guest_local', displayName: '익명 군주 (로컬)', isAnonymous: true };
+    return { uid: 'guest_local', displayName: '익명 셰프', isAnonymous: true };
   }
 }
 
@@ -85,46 +90,48 @@ export function listenAuthState(callback) {
   }
 }
 
-// 5. Firestore DB: 게임 진행 상태 저장 (Save)
-export async function saveGameToCloud(userId, saveData) {
-  if (!db || !userId) {
-    localStorage.setItem('local_game_save', JSON.stringify(saveData));
-    return { success: true, isLocal: true };
-  }
-
+// 5. Firestore DB: 공유 커뮤니티 [나만의 레시피] 실시간 클라우드 업로드
+export async function saveUserRecipeToCloud(recipeData) {
+  if (!db) return false;
   try {
-    const userDocRef = doc(db, "users", userId);
-    await setDoc(userDocRef, {
-      ...saveData,
-      updatedAt: new Date().toISOString()
+    const recipeRef = doc(db, "user_recipes", recipeData.id);
+    await setDoc(recipeRef, {
+      ...recipeData,
+      createdAt: new Date().toISOString()
     }, { merge: true });
-    return { success: true, isLocal: false };
+    return true;
   } catch (error) {
-    console.error("Cloud 저장 오류 -> 로컬 저장소 대체:", error);
-    localStorage.setItem('local_game_save', JSON.stringify(saveData));
-    return { success: true, isLocal: true };
+    console.error("Cloud 공유 레시피 저장 오류:", error);
+    return false;
   }
 }
 
-// 6. Firestore DB: 게임 진행 상태 불러오기 (Load)
-export async function loadGameFromCloud(userId) {
-  if (!db || !userId) {
-    const local = localStorage.getItem('local_game_save');
-    return local ? JSON.parse(local) : null;
-  }
-
+// 6. Firestore DB: 공유 커뮤니티 [나만의 레시피] 다른 이용자가 올린 전체 글 실시간 불러오기 (누구나 공개)
+export async function loadUserRecipesFromCloud() {
+  if (!db) return [];
   try {
-    const userDocRef = doc(db, "users", userId);
-    const docSnap = await getDoc(userDocRef);
-    if (docSnap.exists()) {
-      return docSnap.data();
-    } else {
-      const local = localStorage.getItem('local_game_save');
-      return local ? JSON.parse(local) : null;
-    }
+    const colRef = collection(db, "user_recipes");
+    const snapshot = await getDocs(colRef);
+    const recipes = [];
+    snapshot.forEach(docSnap => {
+      recipes.push(docSnap.data());
+    });
+    return recipes;
   } catch (error) {
-    console.error("Cloud 불러오기 오류 -> 로컬 불러오기 대체:", error);
-    const local = localStorage.getItem('local_game_save');
-    return local ? JSON.parse(local) : null;
+    console.error("Cloud 공유 레시피 전체 로딩 오류:", error);
+    return [];
+  }
+}
+
+// 7. Firestore DB: 공유 커뮤니티 [나만의 레시피] 삭제
+export async function deleteUserRecipeFromCloud(recipeId) {
+  if (!db) return false;
+  try {
+    const recipeRef = doc(db, "user_recipes", recipeId);
+    await deleteDoc(recipeRef);
+    return true;
+  } catch (error) {
+    console.error("Cloud 공유 레시피 삭제 오류:", error);
+    return false;
   }
 }

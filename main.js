@@ -1,11 +1,12 @@
-// 요리왕, 기몌진 메인 애플리케이션 엔진 (로그인 무관 나만의 레시피북 전체 공개 지원)
+// 요리왕, 기몌진 메인 애플리케이션 엔진 (Firestore Cloud 실시간 전 세계 공유 레시피북 완벽 동기화)
 import { 
   loginWithGoogle, 
   loginAsGuest, 
   logoutUser, 
   listenAuthState, 
-  saveGameToCloud, 
-  loadGameFromCloud 
+  saveUserRecipeToCloud, 
+  loadUserRecipesFromCloud,
+  deleteUserRecipeFromCloud
 } from "./firebase-config.js";
 
 let currentUser = null;
@@ -19,8 +20,8 @@ let chefDiaries = {
   '2026-07-26': { name: '투움바 파스타', icon: '🍝', rating: '⭐⭐⭐⭐⭐', memo: '꾸덕한 우유 소스와 고춧가루 조합이 대성공!' }
 };
 
-// 공유 커뮤니티 [나만의 레시피북] 기본 목록 (로그인 여부와 전혀 상관없이 누구나 전체 조회 가능)
-let userRecipes = [
+// 기본 샘플 사용자 레시피
+const defaultUserRecipes = [
   {
     id: 'user_1',
     name: '엄마표 참치 마요 비빔밥',
@@ -57,15 +58,7 @@ let userRecipes = [
   }
 ];
 
-// 로컬 스토리지에 저장된 유저 레시피가 있다면 불러오기
-try {
-  const savedUserRecipes = localStorage.getItem('gimyejin_user_recipes');
-  if (savedUserRecipes) {
-    userRecipes = JSON.parse(savedUserRecipes);
-  }
-} catch (e) {
-  console.warn("로컬 사용자 레시피 로딩 오류:", e);
-}
+let userRecipes = [...defaultUserRecipes];
 
 let selectedDiaryDate = '2026-07-26';
 let calendarCurrentYear = 2026;
@@ -73,7 +66,7 @@ let calendarCurrentMonth = 6;
 
 const CHEF_QUOTES = [
   "오늘 어떤 맛있는 요리를 만들어볼까요? 눌러보세요! 🍳",
-  "나만의 레시피북 탭에서는 누구나 로그인 없이도 공유된 레시피를 보실 수 있어요! 📕",
+  "나만의 레시피북 탭에서는 다른 사람이 올린 레시피를 실시간으로 모두 보실 수 있어요! 📕",
   "나는야 쉐프 탭에서 오늘 내가 만든 요리를 달력에 예쁘게 기록해 보세요! 📅",
   "요리가 약간 탄 것 같다고요? 당황하지 말고 탄 부분을 잘라내고 참기름 한 방울! 💡",
   "밥숟가락 1스푼 = 15ml! 숟가락만 있으면 계량 스푼 없이도 간 맞추기 성공! 🥄",
@@ -98,11 +91,13 @@ window.handleSaveChefDiary = handleSaveChefDiary;
 window.handleDeleteChefDiary = handleDeleteChefDiary;
 window.changeMonth = changeMonth;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   renderRecipes();
-  renderUserRecipes(); // 로그인 여부와 무관하게 모든 공유 게시글 즉시 공개 렌더링
   renderTips();
   initFridgeChecklist();
+
+  // Firestore Cloud 및 로컬 스토리지에서 다른 사람이 올린 실시간 공유 레시피 동기화 로딩
+  await syncCloudUserRecipes();
 
   document.getElementById('btnGoogleAuth').addEventListener('click', handleGoogleLogin);
   document.getElementById('btnGuestAuth').addEventListener('click', handleGuestLogin);
@@ -116,6 +111,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+async function syncCloudUserRecipes() {
+  try {
+    const cloudRecipes = await loadUserRecipesFromCloud();
+    const localSaved = localStorage.getItem('gimyejin_user_recipes');
+    let localList = localSaved ? JSON.parse(localSaved) : [];
+
+    // Cloud 레시피 + 기본 샘플 + 로컬 데이터 중복 제거 병합
+    const map = new Map();
+    [...defaultUserRecipes, ...localList, ...cloudRecipes].forEach(item => {
+      if (item && item.id) {
+        map.set(item.id, item);
+      }
+    });
+
+    userRecipes = Array.from(map.values());
+    renderUserRecipes();
+  } catch (e) {
+    console.warn("Cloud 실시간 레시피 동기화 실패 -> 기본 로컬 목록 표시:", e);
+    renderUserRecipes();
+  }
+}
 
 function openLoginModal() {
   document.getElementById('modalAuth').classList.add('active');
@@ -175,7 +192,7 @@ function switchMainTab(tabName) {
   document.getElementById('tipsMainView').style.display = tabName === 'tips' ? 'block' : 'none';
 
   if (tabName === 'userRecipes') {
-    renderUserRecipes(); // 탭 전환 시에도 로그인 여부 상관없이 100% 전체 공개
+    syncCloudUserRecipes(); // 탭 전환 시에도 최신 다른 사람의 공유 게시글 실시간 로딩
   } else if (tabName === 'chefDiary') {
     renderCalendar();
   }
@@ -210,7 +227,7 @@ function renderRecipes(recipesToRender = null) {
   });
 }
 
-// 로그인 여부와 관계없이 나만의 레시피북 전체 게시글 누구나 공개 렌더링
+// 누구나 접속 시 다른 사람들이 공유한 나만의 레시피북 전체 게시글 실시간 공개
 function renderUserRecipes() {
   const container = document.getElementById('userRecipeGridList');
   if (!container) return;
@@ -298,16 +315,17 @@ function editUserRecipe(recipeId) {
   }
 }
 
-function deleteUserRecipe(recipeId) {
+async function deleteUserRecipe(recipeId) {
   if (confirm("정말 이 레시피를 삭제하시겠습니까?")) {
     userRecipes = userRecipes.filter(r => r.id !== recipeId);
     saveUserRecipesToLocal();
+    await deleteUserRecipeFromCloud(recipeId);
     renderUserRecipes();
     alert("🗑️ 해당 레시피가 성공적으로 삭제되었습니다.");
   }
 }
 
-function handleSaveUserRecipe(e) {
+async function handleSaveUserRecipe(e) {
   e.preventDefault();
 
   const editingId = document.getElementById('recipeEditingId').value;
@@ -323,21 +341,23 @@ function handleSaveUserRecipe(e) {
   const ingredients = ingredientsStr.split(',').map(s => s.trim()).filter(Boolean);
   const steps = stepsStr.split('\n').map((s, idx) => ({ step: idx + 1, text: s.trim() })).filter(s => s.text);
 
+  let targetRecipe;
+
   if (editingId) {
-    const target = userRecipes.find(r => r.id === editingId);
-    if (target) {
-      target.name = name;
-      target.icon = icon;
-      target.time = time;
-      target.img = img;
-      target.desc = desc;
-      target.spoonTip = spoonTip;
-      target.ingredients = ingredients;
-      target.steps = steps;
+    targetRecipe = userRecipes.find(r => r.id === editingId);
+    if (targetRecipe) {
+      targetRecipe.name = name;
+      targetRecipe.icon = icon;
+      targetRecipe.time = time;
+      targetRecipe.img = img;
+      targetRecipe.desc = desc;
+      targetRecipe.spoonTip = spoonTip;
+      targetRecipe.ingredients = ingredients;
+      targetRecipe.steps = steps;
     }
     alert("✏️ 레시피가 성공적으로 수정되었습니다!");
   } else {
-    const newRecipe = {
+    targetRecipe = {
       id: `user_${Date.now()}`,
       name,
       level: '★☆☆ (초보)',
@@ -350,11 +370,13 @@ function handleSaveUserRecipe(e) {
       ingredients,
       steps
     };
-    userRecipes.unshift(newRecipe);
-    alert("🎉 나만의 레시피가 성공적으로 공개 등록되었습니다! 누구나 자유롭게 이 게시글을 보실 수 있습니다.");
+    userRecipes.unshift(targetRecipe);
+    alert("🎉 나만의 레시피가 클라우드에 성공적으로 공개 등록되었습니다! 다른 이용자들도 실시간으로 이 레시피를 보실 수 있습니다.");
   }
 
   saveUserRecipesToLocal();
+  await saveUserRecipeToCloud(targetRecipe);
+
   closeModal('modalAddRecipe');
   renderUserRecipes();
 }
